@@ -231,7 +231,7 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
 
     private void ClearCart()
     {
-        if (_cart.IsEmpty || !_dialogs.Confirm("장바구니의 모든 상품을 비울까요?", "장바구니 비우기"))
+        if (_cart.IsEmpty)
         {
             return;
         }

@@ -12,58 +12,84 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="../../Resources/Controls.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <SolidColorBrush x:Key="BrushNavigationBackground" Color="#101010" />
+            <SolidColorBrush x:Key="BrushNavigationMuted" Color="#8D97A8" />
+            <SolidColorBrush x:Key="BrushNavigationHover" Color="#202020" />
+            <SolidColorBrush x:Key="BrushNavigationSelected" Color="#181818" />
+
+            <Style x:Key="DarkNavigationButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource PosButtonBaseStyle}">
+                <Setter Property="MinHeight" Value="64" />
+                <Setter Property="MinWidth" Value="112" />
+                <Setter Property="Padding" Value="20,0" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0,3,0,0" />
+                <Setter Property="Foreground" Value="{StaticResource BrushNavigationMuted}" />
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{StaticResource BrushNavigationHover}" />
+                        <Setter Property="Foreground" Value="White" />
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Background" Value="#2A2A2A" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
             <Style x:Key="MainNavigationButtonStyle"
                    TargetType="Button"
-                   BasedOn="{StaticResource NavigationButtonStyle}">
+                   BasedOn="{StaticResource DarkNavigationButtonStyle}">
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding DataContext.CurrentSection, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                                  Value="{x:Static viewModels:NavigationSection.Main}">
-                        <Setter Property="Background" Value="{StaticResource BrushPrimaryTint}" />
+                        <Setter Property="Background" Value="{StaticResource BrushNavigationSelected}" />
                         <Setter Property="BorderBrush" Value="{StaticResource BrushPrimary}" />
-                        <Setter Property="BorderThickness" Value="2" />
-                        <Setter Property="Foreground" Value="{StaticResource BrushPrimary}" />
+                        <Setter Property="Foreground" Value="White" />
                         <Setter Property="FontWeight" Value="Bold" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
+
             <Style x:Key="ProductListNavigationButtonStyle"
                    TargetType="Button"
-                   BasedOn="{StaticResource NavigationButtonStyle}">
+                   BasedOn="{StaticResource DarkNavigationButtonStyle}">
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding DataContext.CurrentSection, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                                  Value="{x:Static viewModels:NavigationSection.ProductList}">
-                        <Setter Property="Background" Value="{StaticResource BrushPrimaryTint}" />
+                        <Setter Property="Background" Value="{StaticResource BrushNavigationSelected}" />
                         <Setter Property="BorderBrush" Value="{StaticResource BrushPrimary}" />
-                        <Setter Property="BorderThickness" Value="2" />
-                        <Setter Property="Foreground" Value="{StaticResource BrushPrimary}" />
+                        <Setter Property="Foreground" Value="White" />
                         <Setter Property="FontWeight" Value="Bold" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
+
             <Style x:Key="ProductEditorNavigationButtonStyle"
                    TargetType="Button"
-                   BasedOn="{StaticResource NavigationButtonStyle}">
+                   BasedOn="{StaticResource DarkNavigationButtonStyle}">
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding DataContext.CurrentSection, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                                  Value="{x:Static viewModels:NavigationSection.ProductEditor}">
-                        <Setter Property="Background" Value="{StaticResource BrushPrimaryTint}" />
+                        <Setter Property="Background" Value="{StaticResource BrushNavigationSelected}" />
                         <Setter Property="BorderBrush" Value="{StaticResource BrushPrimary}" />
-                        <Setter Property="BorderThickness" Value="2" />
-                        <Setter Property="Foreground" Value="{StaticResource BrushPrimary}" />
+                        <Setter Property="Foreground" Value="White" />
                         <Setter Property="FontWeight" Value="Bold" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
+
             <Style x:Key="SettingsNavigationButtonStyle"
                    TargetType="Button"
-                   BasedOn="{StaticResource NavigationButtonStyle}">
+                   BasedOn="{StaticResource DarkNavigationButtonStyle}">
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding DataContext.CurrentSection, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                                  Value="{x:Static viewModels:NavigationSection.Settings}">
-                        <Setter Property="Background" Value="{StaticResource BrushPrimaryTint}" />
+                        <Setter Property="Background" Value="{StaticResource BrushNavigationSelected}" />
                         <Setter Property="BorderBrush" Value="{StaticResource BrushPrimary}" />
-                        <Setter Property="BorderThickness" Value="2" />
-                        <Setter Property="Foreground" Value="{StaticResource BrushPrimary}" />
+                        <Setter Property="Foreground" Value="White" />
                         <Setter Property="FontWeight" Value="Bold" />
                     </DataTrigger>
                 </Style.Triggers>
@@ -71,10 +97,9 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Border Background="{StaticResource BrushSurface}"
-            BorderBrush="{StaticResource BrushBorder}"
-            BorderThickness="0,1,0,0"
-            Padding="16,8">
+    <Border Background="{StaticResource BrushNavigationBackground}"
+            BorderThickness="0"
+            Padding="16,6">
         <UniformGrid Columns="4">
             <Button Margin="4,0"
                     Command="{Binding DataContext.NavigateMainCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"

@@ -13,10 +13,79 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="../Resources/Controls.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <SolidColorBrush x:Key="BrushPosHeader" Color="#1A283E" />
+            <SolidColorBrush x:Key="BrushPosHeaderMuted" Color="#B9C3D2" />
+            <SolidColorBrush x:Key="BrushPosWorkspace" Color="#EFEFF4" />
+            <SolidColorBrush x:Key="BrushPosAction" Color="#006DFF" />
+            <SolidColorBrush x:Key="BrushPosActionHover" Color="#005AD6" />
+            <SolidColorBrush x:Key="BrushPosActionPressed" Color="#0049B0" />
+            <SolidColorBrush x:Key="BrushPosBrandAccent" Color="#F4D35E" />
+
+            <Style x:Key="MainSearchButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource PosButtonBaseStyle}">
+                <Setter Property="MinHeight" Value="44" />
+                <Setter Property="Padding" Value="16,0" />
+                <Setter Property="Background" Value="{StaticResource BrushPosHeader}" />
+                <Setter Property="BorderBrush" Value="{StaticResource BrushPosHeader}" />
+                <Setter Property="Foreground" Value="White" />
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#243653" />
+                        <Setter Property="BorderBrush" Value="#243653" />
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Background" Value="#101D30" />
+                        <Setter Property="BorderBrush" Value="#101D30" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style x:Key="MainLinkButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource GhostButtonStyle}">
+                <Setter Property="Foreground" Value="{StaticResource BrushPosAction}" />
+                <Setter Property="MinHeight" Value="44" />
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#EAF2FF" />
+                        <Setter Property="Foreground" Value="{StaticResource BrushPosActionHover}" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style x:Key="MainActionButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource PosButtonBaseStyle}">
+                <Setter Property="MinHeight" Value="56" />
+                <Setter Property="Background" Value="{StaticResource BrushPosAction}" />
+                <Setter Property="BorderBrush" Value="{StaticResource BrushPosAction}" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="FontSize" Value="17" />
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{StaticResource BrushPosActionHover}" />
+                        <Setter Property="BorderBrush" Value="{StaticResource BrushPosActionHover}" />
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Background" Value="{StaticResource BrushPosActionPressed}" />
+                        <Setter Property="BorderBrush" Value="{StaticResource BrushPosActionPressed}" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style x:Key="CheckoutPanelStyle" TargetType="Border">
+                <Setter Property="Background" Value="{StaticResource BrushSurface}" />
+                <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="{StaticResource RadiusPanel}" />
+                <Setter Property="Padding" Value="16" />
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource BrushBackground}">
+    <Grid Background="{StaticResource BrushPosWorkspace}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -24,45 +93,67 @@
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
-                Background="{StaticResource BrushSurface}"
-                BorderBrush="{StaticResource BrushBorder}"
-                BorderThickness="0,0,0,1"
-                Padding="24,16">
+                Height="64"
+                Background="{StaticResource BrushPosHeader}"
+                Padding="20,0">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="{Binding ApplicationName, FallbackValue=Simple POS}"
-                               Style="{StaticResource PageTitleTextStyle}" />
-                    <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
-                        <TextBlock Text="DB"
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <TextBlock Margin="6,0,20,0"
-                                   FontWeight="SemiBold"
-                                   Text="{Binding DatabaseStatusText, FallbackValue=연결 확인 필요}"
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <TextBlock Text="백업"
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <TextBlock Margin="6,0,0,0"
-                                   FontWeight="SemiBold"
-                                   Text="{Binding BackupStatusText, FallbackValue=상태 확인 필요}"
-                                   Style="{StaticResource MutedTextStyle}" />
-                    </StackPanel>
+
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                    <Border Width="18"
+                            Height="24"
+                            Margin="0,0,12,0"
+                            Background="{StaticResource BrushPosBrandAccent}"
+                            CornerRadius="2" />
+                    <TextBlock VerticalAlignment="Center"
+                               FontFamily="{StaticResource FontDisplay}"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               Text="{Binding ApplicationName, FallbackValue=Simple POS}" />
                 </StackPanel>
-                <TextBlock Grid.Column="1"
-                           VerticalAlignment="Center"
-                           FontFamily="{StaticResource FontMono}"
-                           FontSize="17"
-                           Foreground="{StaticResource BrushTextSecondary}"
-                           Text="{Binding CurrentTimeText, FallbackValue=--:--}" />
+
+                <StackPanel Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                    <Ellipse Width="10"
+                             Height="10"
+                             Margin="0,0,8,0"
+                             Fill="{StaticResource BrushSuccess}" />
+                    <TextBlock VerticalAlignment="Center"
+                               FontWeight="SemiBold"
+                               Foreground="White"
+                               Text="영업중" />
+                    <Border Width="1"
+                            Height="20"
+                            Margin="16,0"
+                            Background="#40506A" />
+                    <TextBlock MaxWidth="200"
+                               VerticalAlignment="Center"
+                               Foreground="{StaticResource BrushPosHeaderMuted}"
+                               Text="{Binding DatabaseStatusText, FallbackValue=DB 확인 필요}"
+                               TextTrimming="CharacterEllipsis"
+                               ToolTip="{Binding DatabaseStatusText}" />
+                    <TextBlock Margin="16,0,0,0"
+                               VerticalAlignment="Center"
+                               Foreground="{StaticResource BrushPosHeaderMuted}"
+                               Text="{Binding BackupStatusText, StringFormat=백업 {0}}" />
+                    <TextBlock Margin="20,0,0,0"
+                               VerticalAlignment="Center"
+                               FontFamily="{StaticResource FontMono}"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="White"
+                               Text="{Binding CurrentTimeText, FallbackValue=--:--}" />
+                </StackPanel>
             </Grid>
         </Border>
 
-        <Grid x:Name="AdaptiveWorkspace"
-              Grid.Row="1"
-              Margin="{StaticResource PagePadding}">
+        <Grid x:Name="AdaptiveWorkspace" Grid.Row="1">
             <Grid.RowDefinitions>
                 <RowDefinition x:Name="WorkspacePrimaryRow" Height="*" />
                 <RowDefinition x:Name="WorkspaceSecondaryRow" Height="0" />
@@ -76,7 +167,7 @@
                     Grid.Row="0"
                     Grid.Column="0"
                     Margin="0,0,8,0"
-                    Style="{StaticResource PanelBorderStyle}">
+                    Background="{StaticResource BrushSurface}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -85,19 +176,46 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <DockPanel Margin="0,0,0,16">
-                        <TextBlock DockPanel.Dock="Left"
-                                   Text="장바구니"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <TextBlock Margin="12,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Text="{Binding TotalItemCount, StringFormat={}{0:N0}개}"
-                                   Style="{StaticResource MutedTextStyle}" />
-                    </DockPanel>
+                    <Border Grid.Row="0"
+                            Height="64"
+                            Background="{StaticResource BrushPosWorkspace}"
+                            BorderBrush="{StaticResource BrushBorder}"
+                            BorderThickness="0,0,0,1">
+                        <Grid Margin="20,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                <TextBlock FontFamily="{StaticResource FontDisplay}"
+                                           FontSize="22"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource BrushTextPrimary}"
+                                           Text="장바구니" />
+                                <TextBlock Margin="12,0,0,0"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding TotalItemCount, StringFormat={}{0:N0}개}"
+                                           Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    AutomationProperties.Name="상품 찾기"
+                                    Command="{Binding DataContext.NavigateProductListCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                    Style="{StaticResource MainSearchButtonStyle}"
+                                    ToolTip="상품 목록 열기">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,8,0"
+                                               FontFamily="Segoe Fluent Icons"
+                                               FontSize="17"
+                                               Text="&#xE721;" />
+                                    <TextBlock Text="상품 찾기" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
 
                     <Grid Grid.Row="1"
-                          Margin="8,0,8,4"
-                          MinHeight="36">
+                          MinHeight="44"
+                          Margin="20,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="92" />
@@ -112,7 +230,7 @@
                         <TextBlock Grid.Column="4" VerticalAlignment="Center" Text="작업" TextAlignment="Center" Style="{StaticResource MutedTextStyle}" />
                     </Grid>
 
-                    <Grid Grid.Row="2">
+                    <Grid Grid.Row="2" Margin="12,0">
                         <ListView ItemsSource="{Binding CartItems}"
                                   BorderThickness="0"
                                   Background="Transparent"
@@ -202,19 +320,33 @@
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>
-                        <TextBlock HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   IsHitTestVisible="False"
-                                   Text="장바구니가 비어 있습니다."
-                                   Visibility="{Binding IsCartEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                   Style="{StaticResource MutedTextStyle}" />
+
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding IsCartEmpty, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource BrushTextSecondary}"
+                                       Text="장바구니가 비어 있습니다." />
+                            <Button Margin="0,16,0,0"
+                                    Command="{Binding DataContext.NavigateProductListCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                    Style="{StaticResource MainLinkButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,8,0"
+                                               FontFamily="Segoe Fluent Icons"
+                                               FontSize="17"
+                                               Text="&#xE721;" />
+                                    <TextBlock Text="상품 찾기" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </Grid>
 
-                    <Border Grid.Row="3"
-                            Margin="0,16,0,0"
-                            Padding="16"
-                            Background="{StaticResource BrushSurfaceMuted}"
-                            CornerRadius="{StaticResource RadiusControl}">
+                    <Border x:Name="CompactCheckoutPanel"
+                            Grid.Row="3"
+                            Margin="16,12,16,16"
+                            Style="{StaticResource CheckoutPanelStyle}"
+                            Visibility="Collapsed">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -227,88 +359,145 @@
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal">
                                 <Button Margin="0,0,8,0"
+                                        AutomationProperties.Name="장바구니 비우기"
                                         Command="{Binding ClearCartCommand}"
-                                        Content="장바구니 비우기"
-                                        Style="{StaticResource DangerButtonStyle}" />
-                                <Button Command="{Binding CompleteSaleCommand}"
+                                        Style="{StaticResource DangerButtonStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Margin="0,0,8,0" FontFamily="Segoe Fluent Icons" FontSize="17" Text="&#xE74D;" />
+                                        <TextBlock Text="비우기" />
+                                    </StackPanel>
+                                </Button>
+                                <Button MinWidth="160"
+                                        Command="{Binding CompleteSaleCommand}"
                                         Content="판매 완료"
-                                        Style="{StaticResource LargePrimaryButtonStyle}" />
+                                        Style="{StaticResource MainActionButtonStyle}" />
                             </StackPanel>
                         </Grid>
                     </Border>
                 </Grid>
             </Border>
 
-            <Border x:Name="QuickAddPanel"
-                    Grid.Row="0"
-                    Grid.Column="1"
-                    Margin="8,0,0,0"
-                    Style="{StaticResource PanelBorderStyle}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <DockPanel Margin="0,0,0,10"
-                               LastChildFill="False">
-                        <TextBlock DockPanel.Dock="Left"
-                                   Text="빠른 추가"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <Button DockPanel.Dock="Right"
-                                MinHeight="40"
-                                Padding="12,0"
-                                AutomationProperties.Name="빠른 추가 상품 등록"
-                                Command="{Binding AddQuickProductCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                ToolTip="빠른 추가 상품 등록">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Margin="0,0,8,0"
-                                           FontFamily="Segoe Fluent Icons"
-                                           FontSize="16"
-                                           Text="&#xE710;" />
-                                <TextBlock Text="상품 등록" />
-                            </StackPanel>
-                        </Button>
-                    </DockPanel>
-                    <ScrollViewer Grid.Row="1"
-                                  HorizontalScrollBarVisibility="Disabled"
-                                  VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding QuickAddItems}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Columns="4" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button Command="{Binding DataContext.AddQuickItemCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
-                                            CommandParameter="{Binding}"
-                                            Style="{StaticResource QuickAddTileButtonStyle}">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="*" />
-                                                <RowDefinition Height="Auto" />
-                                            </Grid.RowDefinitions>
-                                            <TextBlock Text="{Binding Name}"
-                                                       TextAlignment="Left"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       TextWrapping="Wrap"
-                                                       ToolTip="{Binding Name}"
-                                                       Style="{StaticResource BodyTextStyle}" />
-                                            <TextBlock Grid.Row="1"
-                                                       Margin="0,8,0,0"
-                                                       FontWeight="SemiBold"
-                                                       Text="{Binding Price, StringFormat={}{0:N0}원}"
-                                                       TextAlignment="Right"
-                                                       Style="{StaticResource BodyTextStyle}" />
-                                        </Grid>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
+            <Grid x:Name="QuickAddPanel"
+                  Grid.Row="0"
+                  Grid.Column="1"
+                  Margin="8,0,0,0"
+                  Background="{StaticResource BrushPosWorkspace}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="20,16,20,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock FontFamily="{StaticResource FontDisplay}"
+                                   FontSize="22"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource BrushTextPrimary}"
+                                   Text="빠른 추가" />
+                        <TextBlock Margin="0,4,0,0"
+                                   Text="{Binding QuickAddItems.Count, StringFormat={}{0:N0}개 상품}"
+                                   Style="{StaticResource MutedTextStyle}" />
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            MinHeight="44"
+                            Padding="14,0"
+                            AutomationProperties.Name="빠른 추가 상품 등록"
+                            Command="{Binding AddQuickProductCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            ToolTip="빠른 추가 상품 등록">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Margin="0,0,8,0"
+                                       FontFamily="Segoe Fluent Icons"
+                                       FontSize="16"
+                                       Text="&#xE710;" />
+                            <TextBlock Text="상품 등록" />
+                        </StackPanel>
+                    </Button>
                 </Grid>
-            </Border>
+
+                <ScrollViewer Grid.Row="1"
+                              Margin="14,0"
+                              HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding QuickAddItems}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="4" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Command="{Binding DataContext.AddQuickItemCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource QuickAddTileButtonStyle}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="{Binding Name}"
+                                                   TextAlignment="Left"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="Wrap"
+                                                   ToolTip="{Binding Name}"
+                                                   Style="{StaticResource BodyTextStyle}" />
+                                        <TextBlock Grid.Row="1"
+                                                   Margin="0,8,0,0"
+                                                   FontWeight="SemiBold"
+                                                   Text="{Binding Price, StringFormat={}{0:N0}원}"
+                                                   TextAlignment="Right"
+                                                   Style="{StaticResource BodyTextStyle}" />
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <Border x:Name="DesktopCheckoutPanel"
+                        Grid.Row="2"
+                        Margin="20,12,20,16"
+                        Style="{StaticResource CheckoutPanelStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="총 결제 금액" Style="{StaticResource MutedTextStyle}" />
+                                <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:N0}원}"
+                                           Style="{StaticResource AmountTextStyle}" />
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.Name="장바구니 비우기"
+                                    Command="{Binding ClearCartCommand}"
+                                    Style="{StaticResource DangerButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,8,0" FontFamily="Segoe Fluent Icons" FontSize="17" Text="&#xE74D;" />
+                                    <TextBlock Text="비우기" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <Button Grid.Row="1"
+                                Margin="0,12,0,0"
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding CompleteSaleCommand}"
+                                Content="판매 완료"
+                                Style="{StaticResource MainActionButtonStyle}" />
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
 
         <controls:BottomNavigation Grid.Row="2" />

@@ -47,5 +47,12 @@ public partial class MainPage : UserControl
         QuickAddPanel.Margin = useHorizontalLayout
             ? new Thickness(8, 0, 0, 0)
             : new Thickness(0, 8, 0, 0);
+
+        DesktopCheckoutPanel.Visibility = useHorizontalLayout
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        CompactCheckoutPanel.Visibility = useHorizontalLayout
+            ? Visibility.Collapsed
+            : Visibility.Visible;
     }
 }

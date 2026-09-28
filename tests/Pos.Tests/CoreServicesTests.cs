@@ -66,6 +66,12 @@ public sealed class CoreServicesTests
 
         cart.SetQuantity(second.Id, 0);
         Assert.Single(cart.Lines);
+
+        cart.Clear();
+        Assert.True(cart.IsEmpty);
+        Assert.Empty(cart.Lines);
+        Assert.Equal(0, cart.ItemCount);
+        Assert.Equal(0, cart.Total);
     }
 
     [Fact]
