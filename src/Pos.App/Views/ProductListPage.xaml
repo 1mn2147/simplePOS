@@ -120,10 +120,14 @@
         <Grid Grid.RowSpan="3"
               Panel.ZIndex="100"
               Visibility="{Binding IsInputPanelVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Button Background="#660A0A0A"
+            <Button Background="Transparent"
+                    BorderBrush="Transparent"
                     BorderThickness="0"
                     Command="{Binding DismissInputPanelCommand}"
-                    Focusable="False" />
+                    Cursor="Arrow"
+                    Focusable="False"
+                    Padding="0"
+                    Style="{StaticResource PosButtonBaseStyle}" />
             <controls:KoreanKeyboard Margin="24"
                                      VerticalAlignment="Bottom"
                                      Visibility="{Binding IsKoreanKeyboardVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />

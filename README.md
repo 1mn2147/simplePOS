@@ -4,10 +4,10 @@ Windows x64용 경량 POS 앱이다. 상품과 판매 데이터는 Excel `.xlsx`
 
 ## 다운로드
 
-[Simple POS v1.0.1](https://github.com/1mn2147/simplePOS/releases/tag/v1.0.1)에서 `SimplePOS-1.0.1-win-x64.exe`와 SHA-256 체크섬 파일을 내려받을 수 있다.
+[Simple POS v1.0.2](https://github.com/1mn2147/simplePOS/releases/tag/v1.0.2)에서 `SimplePOS-1.0.2-win-x64.exe`와 SHA-256 체크섬 파일을 내려받을 수 있다.
 
 ```powershell
-Get-FileHash .\SimplePOS-1.0.1-win-x64.exe -Algorithm SHA256
+Get-FileHash .\SimplePOS-1.0.2-win-x64.exe -Algorithm SHA256
 ```
 
 현재 실행 파일은 코드 서명되지 않아 Windows SmartScreen에서 알 수 없는 게시자 경고가 표시될 수 있다.

@@ -183,9 +183,28 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
             case "products":
                 await NavigateProductListAsync();
                 break;
+            case "products-keyboard":
+                await NavigateProductListAsync();
+                _productListPage?.ShowKoreanKeyboardCommand.Execute("Search");
+                _productListPage?.KoreanKeyCommand.Execute("ㄱ");
+                _productListPage?.KoreanKeyCommand.Execute("ㅏ");
+                break;
             case "editor":
                 await OpenEditorAsync(null, "8801234567890", _mainPage);
                 _productEditorPage?.ShowKoreanKeyboardCommand.Execute("ProductName");
+                _productEditorPage?.KoreanKeyCommand.Execute("ㄱ");
+                _productEditorPage?.KoreanKeyCommand.Execute("ㅏ");
+                break;
+            case "editor-form":
+                await OpenEditorAsync(null, "8801234567890", _mainPage);
+                break;
+            case "editor-keypad":
+                await OpenEditorAsync(null, "8801234567890", _mainPage);
+                _productEditorPage?.ShowNumericKeypadCommand.Execute("Price");
+                _productEditorPage?.NumericKeyCommand.Execute("1");
+                _productEditorPage?.NumericKeyCommand.Execute("2");
+                _productEditorPage?.NumericKeyCommand.Execute("3");
+                _productEditorPage?.NumericKeyCommand.Execute("0");
                 break;
             case "quick-editor":
                 await OpenEditorAsync(
