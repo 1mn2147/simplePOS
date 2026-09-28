@@ -1,0 +1,99 @@
+<UserControl x:Class="Pos.App.Views.Controls.KoreanKeyboard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="330"
+             d:DesignWidth="900">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../../Resources/Controls.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Border MaxWidth="900"
+            HorizontalAlignment="Center"
+            Style="{StaticResource PanelBorderStyle}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <DockPanel Margin="4,0,4,8">
+                <TextBlock DockPanel.Dock="Left"
+                           Text="한글 키보드"
+                           Style="{StaticResource SectionTitleTextStyle}" />
+                <TextBlock Margin="16,0,0,0"
+                           VerticalAlignment="Center"
+                           Text="두벌식"
+                           Style="{StaticResource MutedTextStyle}" />
+            </DockPanel>
+
+            <UniformGrid Grid.Row="1" Columns="10">
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅂ" Content="ㅂ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅈ" Content="ㅈ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㄷ" Content="ㄷ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㄱ" Content="ㄱ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅅ" Content="ㅅ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅛ" Content="ㅛ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅕ" Content="ㅕ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅑ" Content="ㅑ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅐ" Content="ㅐ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅔ" Content="ㅔ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+            </UniformGrid>
+
+            <UniformGrid Grid.Row="2" Margin="24,0" Columns="9">
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅁ" Content="ㅁ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㄴ" Content="ㄴ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅇ" Content="ㅇ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㄹ" Content="ㄹ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅎ" Content="ㅎ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅗ" Content="ㅗ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅓ" Content="ㅓ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅏ" Content="ㅏ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅣ" Content="ㅣ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+            </UniformGrid>
+
+            <Grid Grid.Row="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.4*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="1.4*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Command="{Binding ToggleKoreanShiftCommand}" Content="Shift" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Grid.Column="1" Command="{Binding KoreanKeyCommand}" CommandParameter="ㅋ" Content="ㅋ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Grid.Column="2" Command="{Binding KoreanKeyCommand}" CommandParameter="ㅌ" Content="ㅌ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Grid.Column="3" Command="{Binding KoreanKeyCommand}" CommandParameter="ㅊ" Content="ㅊ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Grid.Column="4" Command="{Binding KoreanKeyCommand}" CommandParameter="ㅍ" Content="ㅍ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Grid.Column="5" Command="{Binding KoreanKeyCommand}" CommandParameter="ㅠ" Content="ㅠ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Grid.Column="6" Command="{Binding KoreanKeyCommand}" CommandParameter="ㅜ" Content="ㅜ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Grid.Column="7" Command="{Binding KoreanKeyCommand}" CommandParameter="ㅡ" Content="ㅡ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Grid.Column="8" Command="{Binding KoreanBackspaceCommand}" Content="지우기" Style="{StaticResource KeyboardKeyButtonStyle}" />
+            </Grid>
+
+            <Grid Grid.Row="4" Margin="3,4,3,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Command="{Binding KoreanClearCommand}" Content="전체 지우기" Style="{StaticResource SecondaryButtonStyle}" />
+                <Button Grid.Column="1" Margin="8,0" Command="{Binding KoreanKeyCommand}" CommandParameter=" " Content="공백" Style="{StaticResource SecondaryButtonStyle}" />
+                <Button Grid.Column="2" Command="{Binding ConfirmInputCommand}" Content="완료" Style="{StaticResource PrimaryButtonStyle}" />
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

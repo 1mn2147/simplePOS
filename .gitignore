@@ -1,0 +1,15 @@
+.dotnet-home/
+.dotnet-sdk/
+.localappdata/
+.tools/
+.nuget/
+**/bin/
+**/obj/
+artifacts/
+graphify-out/
+outputs/
+TestResults/
+*.log
+*.user
+*.suo
+*.tmp

@@ -1,0 +1,132 @@
+<UserControl x:Class="Pos.App.Views.ProductListPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:Pos.App.Views.Controls"
+             mc:Ignorable="d"
+             d:DesignHeight="720"
+             d:DesignWidth="1280">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Resources/Controls.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource BrushBackground}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="{StaticResource BrushSurface}"
+                BorderBrush="{StaticResource BrushBorder}"
+                BorderThickness="0,0,0,1"
+                Padding="24,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="상품 목록" Style="{StaticResource PageTitleTextStyle}" />
+                    <TextBlock Margin="0,4,0,0"
+                               Text="{Binding ProductCount, StringFormat={}{0:N0}개 상품}"
+                               Style="{StaticResource MutedTextStyle}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Margin="0,0,8,0"
+                            Command="{Binding EditSelectedProductCommand}"
+                            Content="선택 상품 수정"
+                            Style="{StaticResource SecondaryButtonStyle}" />
+                    <Button Command="{Binding AddProductCommand}"
+                            Content="상품 추가"
+                            Style="{StaticResource PrimaryButtonStyle}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="{StaticResource PagePadding}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="16" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Style="{StaticResource PanelBorderStyle}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" MinWidth="260" />
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="200" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Margin="0,0,12,0">
+                        <TextBlock Text="상품명 또는 공급사" Style="{StaticResource FieldLabelTextStyle}" />
+                        <TextBox Tag="Search"
+                                 GotKeyboardFocus="OnKoreanInputGotKeyboardFocus"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource PosTextBoxStyle}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                        <TextBlock Text="카테고리" Style="{StaticResource FieldLabelTextStyle}" />
+                        <ComboBox ItemsSource="{Binding Categories}"
+                                  SelectedItem="{Binding SelectedCategory}"
+                                  Style="{StaticResource PosComboBoxStyle}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                        <TextBlock Text="상태" Style="{StaticResource FieldLabelTextStyle}" />
+                        <ComboBox ItemsSource="{Binding ActiveStatusOptions}"
+                                  SelectedItem="{Binding SelectedActiveStatus}"
+                                  Style="{StaticResource PosComboBoxStyle}" />
+                    </StackPanel>
+                    <Button Grid.Column="3"
+                            Margin="0,21,8,0"
+                            Command="{Binding SearchCommand}"
+                            Content="검색"
+                            Style="{StaticResource PrimaryButtonStyle}" />
+                    <Button Grid.Column="4"
+                            Margin="0,21,0,0"
+                            Command="{Binding ClearSearchCommand}"
+                            Content="초기화"
+                            Style="{StaticResource SecondaryButtonStyle}" />
+                </Grid>
+            </Border>
+
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding Products}"
+                      SelectedItem="{Binding SelectedProduct}"
+                      AlternationCount="2"
+                      Style="{StaticResource PosDataGridStyle}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Width="2*" Header="상품명" Binding="{Binding Name}" />
+                    <DataGridTextColumn Width="120" Header="가격" Binding="{Binding Price, StringFormat={}{0:N0}원}" />
+                    <DataGridTextColumn Width="*" Header="공급사" Binding="{Binding Supplier}" />
+                    <DataGridTextColumn Width="100" Header="재고" Binding="{Binding Stock}" />
+                    <DataGridTextColumn Width="150" Header="카테고리" Binding="{Binding Category}" />
+                    <DataGridTextColumn Width="180" Header="바코드" Binding="{Binding Barcode}" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <controls:BottomNavigation Grid.Row="2" />
+
+        <Grid Grid.RowSpan="3"
+              Panel.ZIndex="100"
+              Visibility="{Binding IsInputPanelVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Button Background="#660A0A0A"
+                    BorderThickness="0"
+                    Command="{Binding DismissInputPanelCommand}"
+                    Focusable="False" />
+            <controls:KoreanKeyboard Margin="24"
+                                     VerticalAlignment="Bottom"
+                                     Visibility="{Binding IsKoreanKeyboardVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+        </Grid>
+    </Grid>
+</UserControl>
