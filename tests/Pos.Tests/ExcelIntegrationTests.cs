@@ -1,7 +1,12 @@
 using System.Security.Cryptography;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Packaging;
 using Pos.Core;
 using Pos.Infrastructure;
+using OxmlColumn = DocumentFormat.OpenXml.Spreadsheet.Column;
+using OxmlColumns = DocumentFormat.OpenXml.Spreadsheet.Columns;
+using OxmlSheet = DocumentFormat.OpenXml.Spreadsheet.Sheet;
+using OxmlSheetData = DocumentFormat.OpenXml.Spreadsheet.SheetData;
 
 namespace Pos.Tests;
 
@@ -146,6 +151,49 @@ public sealed class ExcelIntegrationTests : IDisposable
         Assert.Equal(XLColor.Yellow.Color.ToArgb(), sheet.Cell("A3").Style.Fill.BackgroundColor.Color.ToArgb());
     }
 
+    [Fact]
+    public async Task ProductSave_NormalizesOverlappingColumnDefinitions()
+    {
+        var databasePath = await CreateDatabaseAsync();
+        AddOverlappingProductColumns(databasePath);
+
+        double expectedFirstColumnWidth;
+        double expectedSecondColumnWidth;
+        using (var workbook = new XLWorkbook(databasePath))
+        {
+            var products = workbook.Worksheet("Products");
+            expectedFirstColumnWidth = products.Column(1).Width;
+            expectedSecondColumnWidth = products.Column(2).Width;
+        }
+
+        var product = new Product
+        {
+            Name = "겹친 열 정의 회귀 검사",
+            Price = 1_234,
+            Barcode = "TEST-OVERLAPPING-COLUMNS",
+        };
+        var repository = new ExcelPosRepository(databasePath);
+
+        await repository.SaveProductAsync(product);
+
+        var reloadedProducts = await repository.GetProductsAsync();
+        Assert.Equal(product.Id, Assert.Single(reloadedProducts).Id);
+
+        using (var workbook = new XLWorkbook(databasePath))
+        {
+            var products = workbook.Worksheet("Products");
+            Assert.Equal(expectedFirstColumnWidth, products.Column(1).Width, 6);
+            Assert.Equal(expectedSecondColumnWidth, products.Column(2).Width, 6);
+        }
+
+        var ranges = ReadProductColumnRanges(databasePath).OrderBy(range => range.Min).ToArray();
+        Assert.Equal(ranges.Length, ranges.Select(range => range.Min).Distinct().Count());
+        for (var index = 1; index < ranges.Length; index++)
+        {
+            Assert.True(ranges[index - 1].Max < ranges[index].Min);
+        }
+    }
+
     public void Dispose()
     {
         try
@@ -169,6 +217,66 @@ public sealed class ExcelIntegrationTests : IDisposable
         var path = Path.Combine(_temporaryDirectory, $"database-{Guid.NewGuid():N}.xlsx");
         await new ExcelPosRepository(path).CreateAsync();
         return path;
+    }
+
+    private static void AddOverlappingProductColumns(string path)
+    {
+        using var document = SpreadsheetDocument.Open(path, isEditable: true);
+        var workbookPart = document.WorkbookPart!;
+        var productSheet = workbookPart.Workbook.Sheets!
+            .Elements<OxmlSheet>()
+            .Single(sheet => string.Equals(sheet.Name?.Value, "Products", StringComparison.Ordinal));
+        var relationshipId = productSheet.Id?.Value
+            ?? throw new InvalidDataException("Products sheet has no relationship ID.");
+        var worksheetPart = (WorksheetPart)workbookPart.GetPartById(relationshipId);
+        var worksheet = worksheetPart.Worksheet;
+        var columns = worksheet.GetFirstChild<OxmlColumns>();
+        if (columns is null)
+        {
+            var sheetData = worksheet.GetFirstChild<OxmlSheetData>()
+                ?? throw new InvalidDataException("Products sheet has no sheet data.");
+            columns = worksheet.InsertBefore(new OxmlColumns(), sheetData);
+        }
+
+        columns.PrependChild(new OxmlColumn
+        {
+            Min = 1U,
+            Max = 2U,
+            Width = 9.140625D,
+            CustomWidth = true,
+        });
+        columns.AppendChild(new OxmlColumn
+        {
+            Min = 1U,
+            Max = 1U,
+            Width = 40D,
+            CustomWidth = true,
+        });
+        columns.AppendChild(new OxmlColumn
+        {
+            Min = 2U,
+            Max = 2U,
+            Width = 60D,
+            CustomWidth = true,
+        });
+        worksheet.Save();
+    }
+
+    private static IReadOnlyList<(uint Min, uint Max)> ReadProductColumnRanges(string path)
+    {
+        using var document = SpreadsheetDocument.Open(path, isEditable: false);
+        var workbookPart = document.WorkbookPart!;
+        var productSheet = workbookPart.Workbook.Sheets!
+            .Elements<OxmlSheet>()
+            .Single(sheet => string.Equals(sheet.Name?.Value, "Products", StringComparison.Ordinal));
+        var relationshipId = productSheet.Id?.Value
+            ?? throw new InvalidDataException("Products sheet has no relationship ID.");
+        var worksheetPart = (WorksheetPart)workbookPart.GetPartById(relationshipId);
+        return worksheetPart.Worksheet
+            .Elements<OxmlColumns>()
+            .SelectMany(columns => columns.Elements<OxmlColumn>())
+            .Select(column => (column.Min!.Value, column.Max!.Value))
+            .ToArray();
     }
 
     private static string FindSampleWorkbook()

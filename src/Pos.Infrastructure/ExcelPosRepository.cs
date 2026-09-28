@@ -409,13 +409,17 @@ public sealed class ExcelPosRepository : IPosRepository
         EnsureDatabaseExists();
         var sourceHashBefore = await ComputeSha256Async(DatabasePath, cancellationToken).ConfigureAwait(false);
         var temporaryPath = CreateTemporaryWorkbookPath(DatabasePath);
+        var preparedPath = CreateTemporaryWorkbookPath(DatabasePath);
 
         try
         {
+            File.Copy(DatabasePath, preparedPath, overwrite: false);
+            OpenXmlWorkbookNormalizer.NormalizeOverlappingColumnRanges(preparedPath);
+
             int productCount;
             WorkbookPreservationSnapshot preservation;
             cancellationToken.ThrowIfCancellationRequested();
-            using (var workbook = new XLWorkbook(DatabasePath))
+            using (var workbook = new XLWorkbook(preparedPath))
             {
                 ValidateSchema(workbook);
                 preservation = CapturePreservationSnapshot(workbook);
@@ -435,10 +439,10 @@ public sealed class ExcelPosRepository : IPosRepository
 
             AtomicFileCommit.Replace(temporaryPath, DatabasePath);
         }
-        catch
+        finally
         {
+            AtomicFileCommit.TryDelete(preparedPath);
             AtomicFileCommit.TryDelete(temporaryPath);
-            throw;
         }
     }
 
