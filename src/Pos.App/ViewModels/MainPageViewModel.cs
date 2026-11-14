@@ -7,6 +7,16 @@ using Pos.Core;
 
 namespace Pos.App.ViewModels;
 
+public enum BarcodeHandlingResult
+{
+    Added,
+    UnknownBarcode,
+    Blocked,
+    Cancelled,
+    Failed,
+    Ignored,
+}
+
 public sealed class MainPageViewModel : ObservableObject, IDisposable
 {
     private readonly IPosRepository _repository;
@@ -15,9 +25,21 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
     private readonly IDialogService _dialogs;
     private readonly OutOfStockPolicy _outOfStockPolicy;
     private readonly DispatcherTimer _clockTimer;
+    private readonly DispatcherTimer _saleNoticeTimer;
+    private readonly DispatcherTimer _activityFeedbackTimer;
+    private string _saleNoticeText = string.Empty;
+    private string _activityFeedbackText = string.Empty;
+    private string _activityFeedbackKind = "Information";
+    private Guid? _recentProductId;
+    private int _recentProductQuantity;
     private string _databaseStatusText = "연결 중";
     private string _backupStatusText = "대기";
     private string _currentTimeText = string.Empty;
+    private int _quickAddColumns = 4;
+    private bool _isSavingSale;
+    public int QuickAddColumns { get => _quickAddColumns; set => SetProperty(ref _quickAddColumns, value); }
+    public bool IsSavingSale { get => _isSavingSale; private set => SetProperty(ref _isSavingSale, value); }
+    public string CompleteSaleText => IsSavingSale ? "판매 저장 중…" : "판매 완료";
 
     public MainPageViewModel(
         IPosRepository repository,
@@ -39,8 +61,15 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
         AddQuickItemCommand = new RelayCommand<QuickAddItemViewModel>(item => AddProduct(item?.Product));
         AddQuickProductCommand = new AsyncRelayCommand(
             () => AddQuickProductRequested?.Invoke() ?? Task.CompletedTask);
-        ClearCartCommand = new RelayCommand(ClearCart, () => !_cart.IsEmpty);
-        CompleteSaleCommand = new AsyncRelayCommand(CompleteSaleAsync, () => !_cart.IsEmpty);
+        ClearCartCommand = new RelayCommand(ClearCart, () => !_cart.IsEmpty && !IsSavingSale);
+        UndoCartCommand = new RelayCommand(() => { _cart.UndoRemoval(); ClearActivityFeedback(); RefreshCart(); }, () => _cart.CanUndoRemoval && !IsSavingSale);
+        CompleteSaleCommand = new AsyncRelayCommand(CompleteSaleAsync, () => !_cart.IsEmpty && !IsSavingSale);
+        DismissSaleNoticeCommand = new RelayCommand(ClearSaleNotice);
+        _saleNoticeTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(8) };
+        _saleNoticeTimer.Tick += (_, _) => ClearSaleNotice();
+        DismissActivityFeedbackCommand = new RelayCommand(ClearActivityFeedback);
+        _activityFeedbackTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(8) };
+        _activityFeedbackTimer.Tick += (_, _) => ClearActivityFeedback();
 
         _clockTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
@@ -49,6 +78,7 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
         _clockTimer.Tick += (_, _) => UpdateClock();
         _clockTimer.Start();
         UpdateClock();
+        RefreshCart();
     }
 
     public string ApplicationName => "Simple POS";
@@ -62,8 +92,17 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
     public string DatabaseStatusText
     {
         get => _databaseStatusText;
-        private set => SetProperty(ref _databaseStatusText, value);
+        private set
+        {
+            if (SetProperty(ref _databaseStatusText, value))
+            {
+                OnPropertyChanged(nameof(SalesStatusText));
+                OnPropertyChanged(nameof(IsDatabaseReady));
+            }
+        }
     }
+    public bool IsDatabaseReady => DatabaseStatusText.StartsWith("연결됨", StringComparison.Ordinal);
+    public string SalesStatusText => IsDatabaseReady ? "판매 준비" : "DB 확인 필요";
 
     public string BackupStatusText
     {
@@ -80,6 +119,22 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
     public int TotalItemCount => _cart.ItemCount;
     public long TotalAmount => _cart.Total;
     public bool IsCartEmpty => _cart.IsEmpty;
+    public bool CanUndoCart => _cart.CanUndoRemoval;
+    public string SaleNoticeText
+    {
+        get => _saleNoticeText;
+        private set { if (SetProperty(ref _saleNoticeText, value)) OnPropertyChanged(nameof(HasSaleNotice)); }
+    }
+    public bool HasSaleNotice => SaleNoticeText.Length > 0;
+    public string ActivityFeedbackText
+    {
+        get => _activityFeedbackText;
+        private set { if (SetProperty(ref _activityFeedbackText, value)) OnPropertyChanged(nameof(HasActivityFeedback)); }
+    }
+    public bool HasActivityFeedback => ActivityFeedbackText.Length > 0;
+    public string ActivityFeedbackKind { get => _activityFeedbackKind; private set => SetProperty(ref _activityFeedbackKind, value); }
+    public Guid? RecentProductId { get => _recentProductId; private set => SetProperty(ref _recentProductId, value); }
+    public int RecentProductQuantity { get => _recentProductQuantity; private set => SetProperty(ref _recentProductQuantity, value); }
 
     public ICommand IncreaseQuantityCommand { get; }
     public ICommand DecreaseQuantityCommand { get; }
@@ -88,7 +143,10 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
     public ICommand AddQuickItemCommand { get; }
     public ICommand AddQuickProductCommand { get; }
     public RelayCommand ClearCartCommand { get; }
+    public RelayCommand UndoCartCommand { get; }
     public AsyncRelayCommand CompleteSaleCommand { get; }
+    public ICommand DismissSaleNoticeCommand { get; }
+    public ICommand DismissActivityFeedbackCommand { get; }
 
     public async Task LoadAsync()
     {
@@ -101,7 +159,7 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
                          .OrderBy(product => product.SortOrder)
                          .ThenBy(product => product.Name, StringComparer.CurrentCulture))
             {
-                QuickAddItems.Add(new QuickAddItemViewModel(product));
+                QuickAddItems.Add(new QuickAddItemViewModel(product, _outOfStockPolicy));
             }
 
             DatabaseStatusText = $"연결됨 · 상품 {products.Count:N0}개";
@@ -113,11 +171,16 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
         }
     }
 
-    public async Task HandleBarcodeAsync(string barcode)
+    public async Task<BarcodeHandlingResult> HandleBarcodeAsync(string barcode)
     {
         if (string.IsNullOrWhiteSpace(barcode))
         {
-            return;
+            return BarcodeHandlingResult.Ignored;
+        }
+        if (IsSavingSale)
+        {
+            ShowActivityFeedback("판매 저장 중입니다. 저장이 끝난 뒤 다시 스캔하세요.", "Warning");
+            return BarcodeHandlingResult.Blocked;
         }
 
         try
@@ -125,35 +188,65 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
             var product = await _repository.FindProductByBarcodeAsync(barcode.Trim());
             if (product is null)
             {
+                var inactiveProduct = (await _repository.GetProductsAsync()).FirstOrDefault(item =>
+                    !item.IsActive && string.Equals(ProductValidator.NormalizeBarcode(item.Barcode),
+                        ProductValidator.NormalizeBarcode(barcode), StringComparison.Ordinal));
+                if (inactiveProduct is not null) return AddProductWithFeedback(inactiveProduct);
+                ShowActivityFeedback($"미등록 바코드 {barcode.Trim()} · 상품을 등록한 뒤 다시 스캔하세요.", "Information");
                 if (UnknownBarcodeRequested is not null)
                 {
                     await UnknownBarcodeRequested(barcode.Trim());
                 }
 
-                return;
+                return BarcodeHandlingResult.UnknownBarcode;
             }
 
-            AddProduct(product);
+            return AddProductWithFeedback(product);
         }
         catch (Exception exception)
         {
+            ShowActivityFeedback("스캔 처리 실패 · 장바구니를 확인한 뒤 다시 스캔하세요.", "Error");
             _dialogs.Error($"바코드를 처리하지 못했습니다.\n\n{exception.Message}");
+            return BarcodeHandlingResult.Failed;
         }
     }
 
     public void Dispose()
     {
         _clockTimer.Stop();
+        _saleNoticeTimer.Stop();
+        _activityFeedbackTimer.Stop();
     }
 
-    private void AddProduct(Product? product)
+    public bool AddProduct(Product? product, int quantity = 1) => AddProductWithFeedback(product, quantity) == BarcodeHandlingResult.Added;
+
+    private BarcodeHandlingResult AddProductWithFeedback(Product? product, int quantity = 1)
     {
-        if (product is null)
+        if (product is null) return BarcodeHandlingResult.Ignored;
+        if (IsSavingSale)
         {
-            return;
+            ShowActivityFeedback("판매 저장 중입니다. 저장이 끝난 뒤 상품을 담으세요.", "Warning");
+            return BarcodeHandlingResult.Blocked;
+        }
+        if (!product.IsActive)
+        {
+            ShowActivityFeedback($"{product.Name} · 판매 중지 상품이라 담지 않았습니다.", "Warning");
+            return BarcodeHandlingResult.Blocked;
+        }
+        if (quantity is < 1 or > CartService.MaximumQuantity)
+        {
+            ShowActivityFeedback($"수량은 1~{CartService.MaximumQuantity:N0}개로 입력하세요.", "Warning");
+            return BarcodeHandlingResult.Blocked;
+        }
+        var currentQuantity = _cart.Lines.FirstOrDefault(line => line.ProductId == product.Id)?.Quantity ?? 0;
+        if (currentQuantity + quantity > CartService.MaximumQuantity)
+        {
+            _dialogs.Info($"한 상품은 최대 {CartService.MaximumQuantity:N0}개까지 담을 수 있습니다.", "수량 확인");
+            ShowActivityFeedback($"{product.Name} · 최대 수량 {CartService.MaximumQuantity:N0}개를 초과해 담지 않았습니다.", "Warning");
+            return BarcodeHandlingResult.Blocked;
         }
 
-        var result = _cart.Add(product, outOfStockPolicy: _outOfStockPolicy);
+        var result = _cart.Add(product, quantity, outOfStockPolicy: _outOfStockPolicy);
         if (result.Status == CartMutationStatus.OutOfStockConfirmationRequired)
         {
             var confirmed = _dialogs.Confirm(
@@ -163,26 +256,49 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
             {
                 result = _cart.Add(
                     product,
+                    quantity,
                     outOfStockPolicy: _outOfStockPolicy,
                     outOfStockConfirmed: true);
+            }
+            else
+            {
+                ShowActivityFeedback($"{product.Name} · 담기를 취소했습니다.", "Information");
+                return BarcodeHandlingResult.Cancelled;
             }
         }
 
         if (result.Status == CartMutationStatus.OutOfStockBlocked)
         {
             _dialogs.Info($"'{product.Name}'은(는) 품절되어 추가할 수 없습니다.", "품절 상품");
-            return;
+            ShowActivityFeedback($"{product.Name} · 재고가 부족해 담지 않았습니다.", "Warning");
+            return BarcodeHandlingResult.Blocked;
         }
 
         if (result.Succeeded)
         {
+            ClearSaleNotice();
+            ShowActivityFeedback($"{product.Name} · {quantity:N0}개 추가 · 현재 {result.Line!.Quantity:N0}개", "Success", product.Id, result.Line.Quantity);
             RefreshCart();
+            return BarcodeHandlingResult.Added;
         }
+        ShowActivityFeedback($"{product.Name} · 담지 못했습니다. 상품 정보를 확인하세요.", "Error");
+        return BarcodeHandlingResult.Failed;
+    }
+
+    public void ShowActivityFeedback(string message, string kind = "Information", Guid? productId = null, int quantity = 0)
+    {
+        ActivityFeedbackKind = kind;
+        RecentProductId = productId;
+        RecentProductQuantity = quantity;
+        ActivityFeedbackText = message;
+        foreach (var item in CartItems) item.IsRecentlyAdded = item.ProductId == productId;
+        _activityFeedbackTimer.Stop();
+        _activityFeedbackTimer.Start();
     }
 
     private void ChangeQuantity(CartItemViewModel? item, int delta)
     {
-        if (item is null)
+        if (IsSavingSale || item is null)
         {
             return;
         }
@@ -209,14 +325,16 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
 
         if (result.Succeeded)
         {
+            ClearActivityFeedback();
             RefreshCart();
         }
     }
 
     private void RemoveItem(CartItemViewModel? item)
     {
-        if (item is not null && _cart.Remove(item.ProductId))
+        if (!IsSavingSale && item is not null && _cart.Remove(item.ProductId))
         {
+            ClearActivityFeedback();
             RefreshCart();
         }
     }
@@ -231,12 +349,13 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
 
     private void ClearCart()
     {
-        if (_cart.IsEmpty)
+        if (IsSavingSale || _cart.IsEmpty)
         {
             return;
         }
 
         _cart.Clear();
+        ClearActivityFeedback();
         RefreshCart();
     }
 
@@ -251,16 +370,27 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
 
         try
         {
+            IsSavingSale = true;
+            ClearActivityFeedback();
+            OnPropertyChanged(nameof(CompleteSaleText));
+            RefreshCart();
             var sale = await _saleService.CompleteSaleAsync(_cart);
+            ClearActivityFeedback();
+            SaleNoticeText = $"판매 완료 · {sale.Total:N0}원 · {sale.Lines.Sum(line => line.Quantity):N0}개";
+            _saleNoticeTimer.Stop();
+            _saleNoticeTimer.Start();
             RefreshCart();
             await LoadAsync();
-            _dialogs.Info(
-                $"판매가 저장되었습니다.\n총액: {sale.Total.ToString("N0", CultureInfo.CurrentCulture)}원",
-                "판매 완료");
         }
         catch (Exception exception)
         {
             _dialogs.Error($"판매를 저장하지 못했습니다. 장바구니는 유지됩니다.\n\n{exception.Message}");
+            RefreshCart();
+        }
+        finally
+        {
+            IsSavingSale = false;
+            OnPropertyChanged(nameof(CompleteSaleText));
             RefreshCart();
         }
     }
@@ -270,12 +400,14 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
         CartItems.Clear();
         foreach (var line in _cart.Lines)
         {
-            CartItems.Add(new CartItemViewModel(line));
+            CartItems.Add(new CartItemViewModel(line) { IsRecentlyAdded = line.ProductId == RecentProductId });
         }
 
         OnPropertyChanged(nameof(TotalItemCount));
         OnPropertyChanged(nameof(TotalAmount));
         OnPropertyChanged(nameof(IsCartEmpty));
+        OnPropertyChanged(nameof(CanUndoCart));
+        UndoCartCommand.NotifyCanExecuteChanged();
         ClearCartCommand.NotifyCanExecuteChanged();
         CompleteSaleCommand.NotifyCanExecuteChanged();
     }
@@ -284,10 +416,27 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
     {
         CurrentTimeText = DateTime.Now.ToString("yyyy.MM.dd (ddd) HH:mm", CultureInfo.CurrentCulture);
     }
+
+    private void ClearSaleNotice()
+    {
+        _saleNoticeTimer.Stop();
+        SaleNoticeText = string.Empty;
+    }
+
+    private void ClearActivityFeedback()
+    {
+        _activityFeedbackTimer.Stop();
+        ActivityFeedbackText = string.Empty;
+        RecentProductId = null;
+        RecentProductQuantity = 0;
+        foreach (var item in CartItems) item.IsRecentlyAdded = false;
+    }
 }
 
-public sealed class CartItemViewModel(CartLine line)
+public sealed class CartItemViewModel(CartLine line) : ObservableObject
 {
+    private bool _isRecentlyAdded;
+    public bool IsRecentlyAdded { get => _isRecentlyAdded; set => SetProperty(ref _isRecentlyAdded, value); }
     public Product Product { get; } = line.Product;
     public Guid ProductId => line.ProductId;
     public string Name => line.ProductName;
@@ -296,10 +445,17 @@ public sealed class CartItemViewModel(CartLine line)
     public long LineTotal => line.LineTotal;
 }
 
-public sealed class QuickAddItemViewModel(Product product)
+public sealed class QuickAddItemViewModel(Product product, OutOfStockPolicy policy = OutOfStockPolicy.Block)
 {
     public Product Product { get; } = product;
     public string Name => Product.Name;
     public long Price => Product.Price;
     public bool IsOutOfStock => Product.Stock == 0;
+    public bool CanAdd => !IsOutOfStock || policy != OutOfStockPolicy.Block;
+    public string StockStatusText => !IsOutOfStock ? string.Empty : policy switch
+    {
+        OutOfStockPolicy.Block => "품절",
+        OutOfStockPolicy.WarnAndAllow => "재고 0 · 확인 후 판매",
+        _ => "재고 0 · 판매 허용",
+    };
 }

@@ -42,7 +42,7 @@ public sealed class SaleService
             .ToArray();
 
         await _repository.SaveSaleAsync(sale, inventoryUpdates, cancellationToken).ConfigureAwait(false);
-        cart.Clear();
+        cart.Clear(allowUndo: false);
         return sale;
     }
 }

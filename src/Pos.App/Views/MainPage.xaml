@@ -14,67 +14,6 @@
                 <ResourceDictionary Source="../Resources/Controls.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <SolidColorBrush x:Key="BrushPosHeader" Color="#1A283E" />
-            <SolidColorBrush x:Key="BrushPosHeaderMuted" Color="#B9C3D2" />
-            <SolidColorBrush x:Key="BrushPosWorkspace" Color="#EFEFF4" />
-            <SolidColorBrush x:Key="BrushPosAction" Color="#006DFF" />
-            <SolidColorBrush x:Key="BrushPosActionHover" Color="#005AD6" />
-            <SolidColorBrush x:Key="BrushPosActionPressed" Color="#0049B0" />
-            <SolidColorBrush x:Key="BrushPosBrandAccent" Color="#F4D35E" />
-
-            <Style x:Key="MainSearchButtonStyle"
-                   TargetType="Button"
-                   BasedOn="{StaticResource PosButtonBaseStyle}">
-                <Setter Property="MinHeight" Value="44" />
-                <Setter Property="Padding" Value="16,0" />
-                <Setter Property="Background" Value="{StaticResource BrushPosHeader}" />
-                <Setter Property="BorderBrush" Value="{StaticResource BrushPosHeader}" />
-                <Setter Property="Foreground" Value="White" />
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#243653" />
-                        <Setter Property="BorderBrush" Value="#243653" />
-                    </Trigger>
-                    <Trigger Property="IsPressed" Value="True">
-                        <Setter Property="Background" Value="#101D30" />
-                        <Setter Property="BorderBrush" Value="#101D30" />
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-
-            <Style x:Key="MainLinkButtonStyle"
-                   TargetType="Button"
-                   BasedOn="{StaticResource GhostButtonStyle}">
-                <Setter Property="Foreground" Value="{StaticResource BrushPosAction}" />
-                <Setter Property="MinHeight" Value="44" />
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#EAF2FF" />
-                        <Setter Property="Foreground" Value="{StaticResource BrushPosActionHover}" />
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-
-            <Style x:Key="MainActionButtonStyle"
-                   TargetType="Button"
-                   BasedOn="{StaticResource PosButtonBaseStyle}">
-                <Setter Property="MinHeight" Value="56" />
-                <Setter Property="Background" Value="{StaticResource BrushPosAction}" />
-                <Setter Property="BorderBrush" Value="{StaticResource BrushPosAction}" />
-                <Setter Property="Foreground" Value="White" />
-                <Setter Property="FontSize" Value="17" />
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="{StaticResource BrushPosActionHover}" />
-                        <Setter Property="BorderBrush" Value="{StaticResource BrushPosActionHover}" />
-                    </Trigger>
-                    <Trigger Property="IsPressed" Value="True">
-                        <Setter Property="Background" Value="{StaticResource BrushPosActionPressed}" />
-                        <Setter Property="BorderBrush" Value="{StaticResource BrushPosActionPressed}" />
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-
             <Style x:Key="CheckoutPanelStyle" TargetType="Border">
                 <Setter Property="Background" Value="{StaticResource BrushSurface}" />
                 <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
@@ -85,16 +24,17 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource BrushPosWorkspace}">
+    <Grid Background="{StaticResource BrushWorkspace}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
                 Height="64"
-                Background="{StaticResource BrushPosHeader}"
+                Background="{StaticResource BrushHeader}"
                 Padding="20,0">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -106,13 +46,13 @@
                     <Border Width="18"
                             Height="24"
                             Margin="0,0,12,0"
-                            Background="{StaticResource BrushPosBrandAccent}"
+                            Background="{StaticResource BrushBrandAccent}"
                             CornerRadius="2" />
                     <TextBlock VerticalAlignment="Center"
                                FontFamily="{StaticResource FontDisplay}"
                                FontSize="20"
                                FontWeight="Bold"
-                               Foreground="White"
+                               Foreground="{StaticResource BrushOnPrimary}"
                                Text="{Binding ApplicationName, FallbackValue=Simple POS}" />
                 </StackPanel>
 
@@ -122,32 +62,42 @@
                             Orientation="Horizontal">
                     <Ellipse Width="10"
                              Height="10"
-                             Margin="0,0,8,0"
-                             Fill="{StaticResource BrushSuccess}" />
+                             Margin="0,0,8,0">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Fill" Value="{StaticResource BrushWarning}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsDatabaseReady}" Value="True">
+                                        <Setter Property="Fill" Value="{StaticResource BrushSuccess}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
                     <TextBlock VerticalAlignment="Center"
                                FontWeight="SemiBold"
-                               Foreground="White"
-                               Text="영업중" />
+                               Foreground="{StaticResource BrushOnPrimary}"
+                               Text="{Binding SalesStatusText}" />
                     <Border Width="1"
                             Height="20"
                             Margin="16,0"
-                            Background="#40506A" />
+                            Background="{StaticResource BrushHeaderDivider}" />
                     <TextBlock MaxWidth="200"
                                VerticalAlignment="Center"
-                               Foreground="{StaticResource BrushPosHeaderMuted}"
+                               Foreground="{StaticResource BrushHeaderMuted}"
                                Text="{Binding DatabaseStatusText, FallbackValue=DB 확인 필요}"
                                TextTrimming="CharacterEllipsis"
                                ToolTip="{Binding DatabaseStatusText}" />
-                    <TextBlock Margin="16,0,0,0"
+                    <TextBlock Margin="16,0,0,0" MaxWidth="140" TextTrimming="CharacterEllipsis" ToolTip="{Binding BackupStatusText}"
                                VerticalAlignment="Center"
-                               Foreground="{StaticResource BrushPosHeaderMuted}"
+                               Foreground="{StaticResource BrushHeaderMuted}"
                                Text="{Binding BackupStatusText, StringFormat=백업 {0}}" />
                     <TextBlock Margin="20,0,0,0"
                                VerticalAlignment="Center"
                                FontFamily="{StaticResource FontMono}"
                                FontSize="14"
                                FontWeight="SemiBold"
-                               Foreground="White"
+                               Foreground="{StaticResource BrushOnPrimary}"
                                Text="{Binding CurrentTimeText, FallbackValue=--:--}" />
                 </StackPanel>
             </Grid>
@@ -178,7 +128,7 @@
 
                     <Border Grid.Row="0"
                             Height="64"
-                            Background="{StaticResource BrushPosWorkspace}"
+                            Background="{StaticResource BrushWorkspace}"
                             BorderBrush="{StaticResource BrushBorder}"
                             BorderThickness="0,0,0,1">
                         <Grid Margin="20,0">
@@ -200,7 +150,7 @@
                             <Button Grid.Column="1"
                                     AutomationProperties.Name="상품 찾기"
                                     Command="{Binding DataContext.NavigateProductListCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
-                                    Style="{StaticResource MainSearchButtonStyle}"
+                                    Style="{StaticResource DarkButtonStyle}"
                                     ToolTip="상품 목록 열기">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Margin="0,0,8,0"
@@ -213,25 +163,51 @@
                         </Grid>
                     </Border>
 
-                    <Grid Grid.Row="1"
-                          MinHeight="44"
-                          Margin="20,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="92" />
-                            <ColumnDefinition Width="156" />
-                            <ColumnDefinition Width="104" />
-                            <ColumnDefinition Width="104" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock VerticalAlignment="Center" Text="상품" Style="{StaticResource MutedTextStyle}" />
-                        <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="단가" TextAlignment="Right" Style="{StaticResource MutedTextStyle}" />
-                        <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="수량" TextAlignment="Center" Style="{StaticResource MutedTextStyle}" />
-                        <TextBlock Grid.Column="3" VerticalAlignment="Center" Text="금액" TextAlignment="Right" Style="{StaticResource MutedTextStyle}" />
-                        <TextBlock Grid.Column="4" VerticalAlignment="Center" Text="작업" TextAlignment="Center" Style="{StaticResource MutedTextStyle}" />
+                    <Grid Grid.Row="1" MinHeight="48">
+                        <Grid Margin="20,0">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasActivityFeedback}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                            <TextBlock VerticalAlignment="Center" Text="상품 · 단가" Style="{StaticResource MutedTextStyle}" />
+                            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Text="수량 · 금액" Style="{StaticResource MutedTextStyle}" />
+                        </Grid>
+                        <Border Padding="12,0" Visibility="{Binding HasActivityFeedback, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="{StaticResource BrushPrimaryTint}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActivityFeedbackKind}" Value="Success">
+                                            <Setter Property="Background" Value="{StaticResource BrushSuccessTint}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding ActivityFeedbackKind}" Value="Warning">
+                                            <Setter Property="Background" Value="{StaticResource BrushWarningTint}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding ActivityFeedbackKind}" Value="Error">
+                                            <Setter Property="Background" Value="{StaticResource BrushErrorTint}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Padding="8,0" Command="{Binding DismissActivityFeedbackCommand}"
+                                        AutomationProperties.Name="상품 처리 안내 닫기" ToolTip="안내 닫기" Style="{StaticResource GhostButtonStyle}">
+                                    <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE711;" />
+                                </Button>
+                                <TextBlock Text="{Binding ActivityFeedbackText}" TextWrapping="Wrap" Margin="4,6,8,6"
+                                           VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite"
+                                           Style="{StaticResource MutedTextStyle}" />
+                            </DockPanel>
+                        </Border>
                     </Grid>
 
                     <Grid Grid.Row="2" Margin="12,0">
-                        <ListView ItemsSource="{Binding CartItems}"
+                        <ListView x:Name="CartList" ItemsSource="{Binding CartItems}"
                                   BorderThickness="0"
                                   Background="Transparent"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -240,7 +216,7 @@
                                 <Style TargetType="ListViewItem">
                                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                     <Setter Property="Padding" Value="0" />
-                                    <Setter Property="Margin" Value="0,0,0,4" />
+                                    <Setter Property="Margin" Value="0" />
                                     <Setter Property="Background" Value="Transparent" />
                                     <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
                                     <Setter Property="BorderThickness" Value="0,0,0,1" />
@@ -249,73 +225,61 @@
                             </ListView.ItemContainerStyle>
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid MinHeight="64" Margin="8,4">
+                                    <Grid MinHeight="76" Margin="8,0">
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsRecentlyAdded}" Value="True">
+                                                        <Setter Property="Background" Value="{StaticResource BrushPrimaryTint}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="92" />
-                                            <ColumnDefinition Width="52" />
-                                            <ColumnDefinition Width="52" />
-                                            <ColumnDefinition Width="52" />
-                                            <ColumnDefinition Width="104" />
-                                            <ColumnDefinition Width="60" />
-                                            <ColumnDefinition Width="60" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock VerticalAlignment="Center"
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Margin="0,4,12,0" VerticalAlignment="Center" MaxHeight="44" LineHeight="22"
                                                    Text="{Binding Name}"
                                                    TextTrimming="CharacterEllipsis"
-                                                   TextWrapping="NoWrap"
+                                                   TextWrapping="Wrap"
                                                    ToolTip="{Binding Name}"
                                                    Style="{StaticResource BodyTextStyle}" />
-                                        <TextBlock Grid.Column="1"
-                                                   VerticalAlignment="Center"
-                                                   Text="{Binding UnitPrice, StringFormat={}{0:N0}원}"
-                                                   TextAlignment="Right"
-                                                   Style="{StaticResource BodyTextStyle}" />
-                                        <Button Grid.Column="2"
-                                                Margin="2"
-                                                Command="{Binding DataContext.DecreaseQuantityCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
-                                                CommandParameter="{Binding}"
-                                                Content="−"
-                                                ToolTip="수량 줄이기"
-                                                Style="{StaticResource QuantityButtonStyle}" />
-                                        <TextBlock Grid.Column="3"
-                                                   VerticalAlignment="Center"
-                                                   FontSize="17"
-                                                   FontWeight="SemiBold"
-                                                   Text="{Binding Quantity}"
-                                                   TextAlignment="Center"
-                                                   Style="{StaticResource BodyTextStyle}" />
-                                        <Button Grid.Column="4"
-                                                Margin="2"
-                                                Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
-                                                CommandParameter="{Binding}"
-                                                Content="+"
-                                                ToolTip="수량 늘리기"
-                                                Style="{StaticResource QuantityButtonStyle}" />
-                                        <TextBlock Grid.Column="5"
-                                                   VerticalAlignment="Center"
-                                                   FontWeight="SemiBold"
+                                        <TextBlock Grid.Column="1" Margin="0,4,4,0" HorizontalAlignment="Right"
+                                                   FontWeight="SemiBold" Typography.NumeralAlignment="Tabular"
                                                    Text="{Binding LineTotal, StringFormat={}{0:N0}원}"
-                                                   TextAlignment="Right"
                                                    Style="{StaticResource BodyTextStyle}" />
-                                        <Button Grid.Column="6"
-                                                Margin="4,2"
-                                                Command="{Binding DataContext.EditCartItemCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
-                                                CommandParameter="{Binding}"
-                                                AutomationProperties.Name="상품 수정"
-                                                ToolTip="상품 정보 수정"
-                                                Style="{StaticResource GhostButtonStyle}">
-                                            <TextBlock FontFamily="Segoe Fluent Icons" FontSize="18" Text="&#xE70F;" />
-                                        </Button>
-                                        <Button Grid.Column="7"
-                                                Margin="4,2"
-                                                Command="{Binding DataContext.RemoveCartItemCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
-                                                CommandParameter="{Binding}"
-                                                AutomationProperties.Name="목록에서 제거"
-                                                ToolTip="목록에서 제거"
-                                                Style="{StaticResource GhostButtonStyle}">
-                                            <TextBlock FontFamily="Segoe Fluent Icons" FontSize="18" Text="&#xE74D;" />
-                                        </Button>
+                                        <TextBlock Grid.Row="1" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                   Text="{Binding UnitPrice, StringFormat=단가 {0:N0}원}" Typography.NumeralAlignment="Tabular"
+                                                   Style="{StaticResource MutedTextStyle}" />
+                                        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <Button Margin="2" Command="{Binding DataContext.DecreaseQuantityCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                                    CommandParameter="{Binding}" Content="−" ToolTip="수량 줄이기"
+                                                    AutomationProperties.Name="{Binding Name, StringFormat={}{0} 수량 줄이기}"
+                                                    Style="{StaticResource QuantityButtonStyle}" />
+                                            <TextBlock Width="48" VerticalAlignment="Center" FontWeight="SemiBold"
+                                                       Text="{Binding Quantity, StringFormat={}{0:N0}}" TextAlignment="Center" Typography.NumeralAlignment="Tabular"
+                                                       AutomationProperties.Name="{Binding Name, StringFormat={}{0} 수량}"
+                                                       Style="{StaticResource BodyTextStyle}" />
+                                            <Button Margin="2" Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                                    CommandParameter="{Binding}" Content="+" ToolTip="수량 늘리기"
+                                                    AutomationProperties.Name="{Binding Name, StringFormat={}{0} 수량 늘리기}"
+                                                    Style="{StaticResource QuantityButtonStyle}" />
+                                            <Button Margin="8,2,2,2" Padding="8,0" Command="{Binding DataContext.EditCartItemCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                                    CommandParameter="{Binding}" AutomationProperties.Name="{Binding Name, StringFormat={}{0} 상품 수정}"
+                                                    ToolTip="상품 정보 수정" Style="{StaticResource GhostButtonStyle}">
+                                                <TextBlock FontFamily="Segoe Fluent Icons" FontSize="18" Text="&#xE70F;" />
+                                            </Button>
+                                            <Button Margin="2" Padding="8,0" Command="{Binding DataContext.RemoveCartItemCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                                    CommandParameter="{Binding}" AutomationProperties.Name="{Binding Name, StringFormat={}{0} 장바구니에서 제거}"
+                                                    ToolTip="장바구니에서 제거" Style="{StaticResource GhostButtonStyle}">
+                                                <TextBlock FontFamily="Segoe Fluent Icons" FontSize="18" Text="&#xE74D;" />
+                                            </Button>
+                                        </StackPanel>
                                     </Grid>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
@@ -330,7 +294,7 @@
                                        Text="장바구니가 비어 있습니다." />
                             <Button Margin="0,16,0,0"
                                     Command="{Binding DataContext.NavigateProductListCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
-                                    Style="{StaticResource MainLinkButtonStyle}">
+                                    Style="{StaticResource PrimaryLinkButtonStyle}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Margin="0,0,8,0"
                                                FontFamily="Segoe Fluent Icons"
@@ -342,38 +306,25 @@
                         </StackPanel>
                     </Grid>
 
-                    <Border x:Name="CompactCheckoutPanel"
-                            Grid.Row="3"
-                            Margin="16,12,16,16"
-                            Style="{StaticResource CheckoutPanelStyle}"
-                            Visibility="Collapsed">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="총 결제 금액" Style="{StaticResource MutedTextStyle}" />
-                                <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:N0}원}"
-                                           Style="{StaticResource AmountTextStyle}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <Button Margin="0,0,8,0"
-                                        AutomationProperties.Name="장바구니 비우기"
-                                        Command="{Binding ClearCartCommand}"
-                                        Style="{StaticResource DangerButtonStyle}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Margin="0,0,8,0" FontFamily="Segoe Fluent Icons" FontSize="17" Text="&#xE74D;" />
-                                        <TextBlock Text="비우기" />
-                                    </StackPanel>
-                                </Button>
-                                <Button MinWidth="160"
-                                        Command="{Binding CompleteSaleCommand}"
-                                        Content="판매 완료"
-                                        Style="{StaticResource MainActionButtonStyle}" />
-                            </StackPanel>
-                        </Grid>
+                    <StackPanel Grid.Row="3">
+                    <Border Margin="16,8" Padding="12,8" Background="{StaticResource BrushSuccessTint}"
+                            CornerRadius="{StaticResource RadiusControl}"
+                            Visibility="{Binding HasSaleNotice, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Command="{Binding DismissSaleNoticeCommand}" Content="닫기"
+                                    AutomationProperties.Name="판매 완료 안내 닫기" Style="{StaticResource GhostButtonStyle}" />
+                            <TextBlock Text="{Binding SaleNoticeText}" TextWrapping="Wrap" Margin="0,0,8,0"
+                                       VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite"
+                                       Style="{StaticResource BodyTextStyle}" />
+                        </DockPanel>
                     </Border>
+                    <DockPanel Margin="16,8" Visibility="{Binding CanUndoCart, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Button DockPanel.Dock="Right" Command="{Binding UndoCartCommand}" Content="되돌리기"
+                                ToolTip="마지막 삭제 또는 비우기 복원 (Ctrl+Z)" Style="{StaticResource SecondaryButtonStyle}" />
+                        <TextBlock Text="삭제한 상품을 복원할 수 있습니다." VerticalAlignment="Center"
+                                   Margin="0,0,8,0" Style="{StaticResource MutedTextStyle}" />
+                    </DockPanel>
+                    </StackPanel>
                 </Grid>
             </Border>
 
@@ -381,7 +332,7 @@
                   Grid.Row="0"
                   Grid.Column="1"
                   Margin="8,0,0,0"
-                  Background="{StaticResource BrushPosWorkspace}">
+                  Background="{StaticResource BrushWorkspace}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -404,7 +355,7 @@
                                    Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
                     <Button Grid.Column="1"
-                            MinHeight="44"
+                            MinHeight="48"
                             Padding="14,0"
                             AutomationProperties.Name="빠른 추가 상품 등록"
                             Command="{Binding AddQuickProductCommand}"
@@ -424,40 +375,63 @@
                               Margin="14,0"
                               HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding QuickAddItems}">
+                    <ItemsControl ItemsSource="{Binding QuickAddItems}" VerticalAlignment="Top">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <UniformGrid Columns="4" />
+                                <UniformGrid Columns="{Binding QuickAddColumns}" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Command="{Binding DataContext.AddQuickItemCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
-                                        CommandParameter="{Binding}"
+                                <Button Height="108" Command="{Binding DataContext.AddQuickItemCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                        CommandParameter="{Binding}" IsEnabled="{Binding CanAdd}" AutomationProperties.Name="{Binding Name}" AutomationProperties.HelpText="{Binding StockStatusText}"
                                         Style="{StaticResource QuickAddTileButtonStyle}">
                                     <Grid>
                                         <Grid.RowDefinitions>
-                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="40" />
+                                            <RowDefinition Height="28" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <TextBlock Text="{Binding Name}"
                                                    TextAlignment="Left"
                                                    TextTrimming="CharacterEllipsis"
-                                                   TextWrapping="Wrap"
+                                                   TextWrapping="Wrap" MaxHeight="40" LineHeight="20"
                                                    ToolTip="{Binding Name}"
                                                    Style="{StaticResource BodyTextStyle}" />
-                                        <TextBlock Grid.Row="1"
-                                                   Margin="0,8,0,0"
+                                        <TextBlock Grid.Row="1" Text="{Binding StockStatusText}" FontSize="12" LineHeight="14" TextWrapping="Wrap"
+                                                   Visibility="{Binding IsOutOfStock, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                   Foreground="{StaticResource BrushTextSecondary}" />
+                                        <Viewbox Grid.Row="2" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Right">
+                                        <TextBlock
                                                    FontWeight="SemiBold"
                                                    Text="{Binding Price, StringFormat={}{0:N0}원}"
                                                    TextAlignment="Right"
                                                    Style="{StaticResource BodyTextStyle}" />
+                                        </Viewbox>
                                     </Grid>
                                 </Button>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
+
+                <StackPanel Grid.Row="1" Margin="24,20" VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding QuickAddItems.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="자주 파는 상품을 여기에" TextWrapping="Wrap" Style="{StaticResource SectionTitleTextStyle}" />
+                    <TextBlock Margin="0,8,0,16" Text="빠른 추가 상품을 등록하면 터치 한 번으로 담을 수 있습니다."
+                               TextWrapping="Wrap" Style="{StaticResource MutedTextStyle}" />
+                    <Button Command="{Binding AddQuickProductCommand}" Content="상품 등록" HorizontalAlignment="Left"
+                            Style="{StaticResource SecondaryButtonStyle}" />
+                </StackPanel>
 
                 <Border x:Name="DesktopCheckoutPanel"
                         Grid.Row="2"
@@ -475,8 +449,9 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="총 결제 금액" Style="{StaticResource MutedTextStyle}" />
-                                <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:N0}원}"
-                                           Style="{StaticResource AmountTextStyle}" />
+                                <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="0,0,12,0">
+                                    <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:N0}원}" Style="{StaticResource AmountTextStyle}" />
+                                </Viewbox>
                             </StackPanel>
                             <Button Grid.Column="1"
                                     VerticalAlignment="Center"
@@ -493,13 +468,48 @@
                                 Margin="0,12,0,0"
                                 HorizontalContentAlignment="Center"
                                 Command="{Binding CompleteSaleCommand}"
-                                Content="판매 완료"
-                                Style="{StaticResource MainActionButtonStyle}" />
+                                Content="{Binding CompleteSaleText}"
+                                ToolTip="판매 완료 (Ctrl+Enter)"
+                                Style="{StaticResource LargePrimaryButtonStyle}" />
                     </Grid>
                 </Border>
             </Grid>
         </Grid>
 
-        <controls:BottomNavigation Grid.Row="2" />
+        <Border x:Name="CompactCheckoutPanel"
+                Grid.Row="2"
+                Margin="16,8"
+                Style="{StaticResource CheckoutPanelStyle}"
+                Visibility="Collapsed">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="총 결제 금액" Style="{StaticResource MutedTextStyle}" />
+                    <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="0,0,16,0">
+                        <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:N0}원}" Style="{StaticResource AmountTextStyle}" />
+                    </Viewbox>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Margin="0,0,8,0"
+                            AutomationProperties.Name="장바구니 비우기"
+                            Command="{Binding ClearCartCommand}"
+                            Style="{StaticResource DangerButtonStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Margin="0,0,8,0" FontFamily="Segoe Fluent Icons" FontSize="17" Text="&#xE74D;" />
+                            <TextBlock Text="비우기" />
+                        </StackPanel>
+                    </Button>
+                    <Button MinWidth="160"
+                            Command="{Binding CompleteSaleCommand}"
+                            Content="{Binding CompleteSaleText}"
+                            ToolTip="판매 완료 (Ctrl+Enter)"
+                            Style="{StaticResource LargePrimaryButtonStyle}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+        <controls:BottomNavigation Grid.Row="3" />
     </Grid>
 </UserControl>

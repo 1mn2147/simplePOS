@@ -88,6 +88,7 @@ public sealed class CoreServicesTests
 
         Assert.True(cart.IsEmpty);
         Assert.Equal(now, sale.CompletedAt);
+        Assert.False(cart.CanUndoRemoval);
         Assert.Equal(4_000, sale.Total);
         Assert.Equal(2, Assert.Single(sale.Lines).Quantity);
         Assert.Equal(0, Assert.Single(repository.InventoryUpdates!).Stock);

@@ -11,12 +11,21 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="../../Resources/Controls.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="ShiftKeyButtonStyle" TargetType="Button" BasedOn="{StaticResource KeyboardKeyButtonStyle}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsKoreanShift}" Value="True">
+                        <Setter Property="Background" Value="{StaticResource BrushPrimary}" />
+                        <Setter Property="BorderBrush" Value="{StaticResource BrushPrimary}" />
+                        <Setter Property="Foreground" Value="{StaticResource BrushOnPrimary}" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
     <Border MaxWidth="900"
             HorizontalAlignment="Center"
-            Style="{StaticResource PanelBorderStyle}">
+            Padding="12" Style="{StaticResource PanelBorderStyle}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -26,27 +35,26 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <DockPanel Margin="4,0,4,8">
-                <TextBlock DockPanel.Dock="Left"
-                           Text="한글 키보드"
-                           Style="{StaticResource SectionTitleTextStyle}" />
-                <TextBlock Margin="16,0,0,0"
-                           VerticalAlignment="Center"
-                           Text="두벌식"
-                           Style="{StaticResource MutedTextStyle}" />
-            </DockPanel>
+            <Grid Margin="4,0,4,8">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding ActiveInputLabel}" VerticalAlignment="Center" Margin="0,0,12,0" Style="{StaticResource FieldLabelTextStyle}" />
+                <TextBox Grid.Column="1" Tag="ActiveInput" MinWidth="180" AutomationProperties.Name="{Binding ActiveInputLabel}"
+                         Text="{Binding ActiveInputValue, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource PosTextBoxStyle}" />
+                <Button Grid.Column="2" Margin="8,0,0,0" Content="닫기" Command="{Binding ConfirmInputCommand}"
+                        ToolTip="입력값을 유지하고 닫기 (Esc)" Style="{StaticResource SecondaryButtonStyle}" />
+            </Grid>
 
             <UniformGrid Grid.Row="1" Columns="10">
-                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅂ" Content="ㅂ" Style="{StaticResource KeyboardKeyButtonStyle}" />
-                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅈ" Content="ㅈ" Style="{StaticResource KeyboardKeyButtonStyle}" />
-                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㄷ" Content="ㄷ" Style="{StaticResource KeyboardKeyButtonStyle}" />
-                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㄱ" Content="ㄱ" Style="{StaticResource KeyboardKeyButtonStyle}" />
-                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅅ" Content="ㅅ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅂ" Content="{Binding KoreanKeyLabels[ㅂ]}" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅈ" Content="{Binding KoreanKeyLabels[ㅈ]}" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㄷ" Content="{Binding KoreanKeyLabels[ㄷ]}" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㄱ" Content="{Binding KoreanKeyLabels[ㄱ]}" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅅ" Content="{Binding KoreanKeyLabels[ㅅ]}" Style="{StaticResource KeyboardKeyButtonStyle}" />
                 <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅛ" Content="ㅛ" Style="{StaticResource KeyboardKeyButtonStyle}" />
                 <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅕ" Content="ㅕ" Style="{StaticResource KeyboardKeyButtonStyle}" />
                 <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅑ" Content="ㅑ" Style="{StaticResource KeyboardKeyButtonStyle}" />
-                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅐ" Content="ㅐ" Style="{StaticResource KeyboardKeyButtonStyle}" />
-                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅔ" Content="ㅔ" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅐ" Content="{Binding KoreanKeyLabels[ㅐ]}" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Command="{Binding KoreanKeyCommand}" CommandParameter="ㅔ" Content="{Binding KoreanKeyLabels[ㅔ]}" Style="{StaticResource KeyboardKeyButtonStyle}" />
             </UniformGrid>
 
             <UniformGrid Grid.Row="2" Margin="24,0" Columns="9">
@@ -73,7 +81,12 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="1.4*" />
                 </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" Command="{Binding ToggleKoreanShiftCommand}" Content="Shift" Style="{StaticResource KeyboardKeyButtonStyle}" />
+                <Button Grid.Column="0" Command="{Binding ToggleKoreanShiftCommand}" AutomationProperties.Name="Shift"
+                        AutomationProperties.HelpText="{Binding KoreanShiftStateText}" ToolTip="다음 한 글자에 쌍자음·이중모음을 적용합니다."
+                        Style="{StaticResource ShiftKeyButtonStyle}">
+                    <StackPanel><TextBlock Text="Shift" FontSize="15" TextAlignment="Center" />
+                        <TextBlock Text="{Binding KoreanShiftStateText}" FontSize="11" TextAlignment="Center" /></StackPanel>
+                </Button>
                 <Button Grid.Column="1" Command="{Binding KoreanKeyCommand}" CommandParameter="ㅋ" Content="ㅋ" Style="{StaticResource KeyboardKeyButtonStyle}" />
                 <Button Grid.Column="2" Command="{Binding KoreanKeyCommand}" CommandParameter="ㅌ" Content="ㅌ" Style="{StaticResource KeyboardKeyButtonStyle}" />
                 <Button Grid.Column="3" Command="{Binding KoreanKeyCommand}" CommandParameter="ㅊ" Content="ㅊ" Style="{StaticResource KeyboardKeyButtonStyle}" />

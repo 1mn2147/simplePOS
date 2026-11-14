@@ -25,6 +25,7 @@ public sealed class CartService
     public const int MaximumQuantity = 9_999;
 
     private readonly List<CartLine> _lines = [];
+    private List<CartLine>? _removedSnapshot;
 
     public IReadOnlyList<CartLine> Lines => _lines.AsReadOnly();
 
@@ -33,6 +34,7 @@ public sealed class CartService
     public long Total => _lines.Aggregate(0L, (total, line) => checked(total + line.LineTotal));
 
     public bool IsEmpty => _lines.Count == 0;
+    public bool CanUndoRemoval => _removedSnapshot is not null;
 
     public CartMutationResult Add(
         Product product,
@@ -53,6 +55,7 @@ public sealed class CartService
             return stockResult;
         }
 
+        _removedSnapshot = null;
         if (existing is null)
         {
             var line = new CartLine(product, targetQuantity);
@@ -79,6 +82,7 @@ public sealed class CartService
 
         if (quantity <= 0)
         {
+            RememberRemoval();
             _lines.Remove(line);
             return new CartMutationResult(CartMutationStatus.Removed, line);
         }
@@ -92,6 +96,7 @@ public sealed class CartService
             return stockResult;
         }
 
+        _removedSnapshot = null;
         line.Quantity = quantity;
         return new CartMutationResult(CartMutationStatus.QuantityChanged, line);
     }
@@ -118,13 +123,29 @@ public sealed class CartService
     public bool Remove(Guid productId)
     {
         var line = FindLine(productId);
-        return line is not null && _lines.Remove(line);
+        if (line is null) return false;
+        RememberRemoval();
+        return _lines.Remove(line);
     }
 
-    public void Clear()
+    public void Clear(bool allowUndo = true)
     {
+        if (allowUndo && !IsEmpty) RememberRemoval();
+        else if (!allowUndo) _removedSnapshot = null;
         _lines.Clear();
     }
+
+    public bool UndoRemoval()
+    {
+        if (_removedSnapshot is null) return false;
+        _lines.Clear();
+        _lines.AddRange(_removedSnapshot);
+        _removedSnapshot = null;
+        return true;
+    }
+
+    private void RememberRemoval() => _removedSnapshot = _lines
+        .Select(line => new CartLine(line.Product, line.Quantity)).ToList();
 
     private CartLine? FindLine(Guid productId)
     {

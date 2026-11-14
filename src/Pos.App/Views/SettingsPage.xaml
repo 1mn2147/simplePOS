@@ -6,7 +6,7 @@
              xmlns:controls="clr-namespace:Pos.App.Views.Controls"
              mc:Ignorable="d"
              d:DesignHeight="720"
-             d:DesignWidth="1280">
+             d:DesignWidth="1280" SizeChanged="OnPageSizeChanged">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -36,7 +36,7 @@
                     <TextBlock Text="설정" Style="{StaticResource PageTitleTextStyle}" />
                     <TextBlock Margin="0,4,0,0"
                                Text="{Binding SettingsStatusText}"
-                               Style="{StaticResource MutedTextStyle}" />
+                               Style="{StaticResource ValidationFeedbackTextStyle}" />
                 </StackPanel>
                 <Button Grid.Column="1"
                         Command="{Binding SaveSettingsCommand}"
@@ -48,11 +48,12 @@
         <ScrollViewer Grid.Row="1"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
-            <Grid Margin="{StaticResource PagePadding}">
+            <Grid x:Name="SettingsFormGrid" Margin="{StaticResource PagePadding}">
+                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="20" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="SettingsColumnGap" Width="20" />
+                    <ColumnDefinition x:Name="SettingsSecondaryColumn" Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
@@ -60,22 +61,22 @@
                         <StackPanel>
                             <TextBlock Margin="0,0,0,20" Text="상품 데이터" Style="{StaticResource SectionTitleTextStyle}" />
                             <TextBlock Text="Excel 데이터베이스" Style="{StaticResource FieldLabelTextStyle}" />
-                            <TextBox IsReadOnly="True"
+                            <TextBox IsReadOnly="True" AutomationProperties.Name="Excel 데이터베이스 경로" ToolTip="{Binding DatabasePath}"
                                      Text="{Binding DatabasePath, Mode=OneWay}"
                                      Style="{StaticResource PosTextBoxStyle}" />
-                            <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
-                                <Button Margin="0,0,8,0"
+                            <WrapPanel Margin="0,12,0,0">
+                                <Button Margin="0,0,8,8"
                                         Command="{Binding SelectDatabaseCommand}"
                                         Content="파일 선택"
                                         Style="{StaticResource SecondaryButtonStyle}" />
-                                <Button Margin="0,0,8,0"
+                                <Button Margin="0,0,8,8"
                                         Command="{Binding TestDatabaseCommand}"
                                         Content="연결 테스트"
                                         Style="{StaticResource SecondaryButtonStyle}" />
-                                <Button Command="{Binding ReloadDatabaseCommand}"
-                                        Content="다시 불러오기"
+                                <Button Margin="0,0,0,8" Command="{Binding ReloadDatabaseCommand}"
+                                        Content="사용 중 DB 새로고침" ToolTip="현재 연결된 DB의 상품만 새로 고칩니다. 수정 중인 설정은 적용하지 않습니다."
                                         Style="{StaticResource SecondaryButtonStyle}" />
-                            </StackPanel>
+                            </WrapPanel>
                             <TextBlock Margin="0,12,0,0"
                                        Text="{Binding DatabaseStatusText}"
                                        TextWrapping="Wrap"
@@ -87,31 +88,33 @@
                         <StackPanel>
                             <TextBlock Margin="0,0,0,20" Text="스캐너" Style="{StaticResource SectionTitleTextStyle}" />
                             <TextBlock Text="종료 키" Style="{StaticResource FieldLabelTextStyle}" />
-                            <ComboBox ItemsSource="{Binding ScannerTerminatorOptions}"
+                            <ComboBox AutomationProperties.Name="스캐너 종료 키" ItemsSource="{Binding ScannerTerminatorOptions}"
                                       SelectedItem="{Binding SelectedScannerTerminator}"
                                       Style="{StaticResource PosComboBoxStyle}" />
                             <TextBlock Margin="0,16,0,8" Text="최대 입력 간격(ms)" Style="{StaticResource FieldLabelTextStyle}" />
-                            <TextBox InputMethod.IsInputMethodEnabled="False"
+                            <TextBox Tag="ScannerInputThresholdText" AutomationProperties.Name="스캐너 최대 입력 간격"
+                                     AutomationProperties.HelpText="{Binding ScannerInputError}" InputMethod.IsInputMethodEnabled="False"
                                      Text="{Binding ScannerInputThresholdText, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource PosTextBoxStyle}" />
+                            <TextBlock Text="{Binding ScannerInputError}" Style="{StaticResource ErrorTextStyle}" />
                             <CheckBox Margin="0,12,0,0"
                                       IsChecked="{Binding IsScanSoundEnabled}"
                                       Content="스캔 성공음"
                                       Style="{StaticResource PosCheckBoxStyle}" />
                             <TextBlock Margin="0,16,0,8" Text="품절 상품" Style="{StaticResource FieldLabelTextStyle}" />
-                            <ComboBox ItemsSource="{Binding OutOfStockPolicyOptions}"
+                            <ComboBox AutomationProperties.Name="품절 상품 판매 정책" ItemsSource="{Binding OutOfStockPolicyOptions}"
                                       SelectedItem="{Binding SelectedOutOfStockPolicy}"
                                       Style="{StaticResource PosComboBoxStyle}" />
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
-                <StackPanel Grid.Column="2">
+                <StackPanel x:Name="SettingsSecondaryPanel" Grid.Column="2">
                     <Border Style="{StaticResource PanelBorderStyle}">
                         <StackPanel>
                             <TextBlock Margin="0,0,0,20" Text="백업" Style="{StaticResource SectionTitleTextStyle}" />
                             <TextBlock Text="백업 폴더" Style="{StaticResource FieldLabelTextStyle}" />
-                            <TextBox IsReadOnly="True"
+                            <TextBox IsReadOnly="True" AutomationProperties.Name="백업 폴더 경로" ToolTip="{Binding BackupFolderPath}"
                                      Text="{Binding BackupFolderPath, Mode=OneWay}"
                                      Style="{StaticResource PosTextBoxStyle}" />
                             <Button Margin="0,12,0,0"
@@ -128,21 +131,25 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <TextBlock Text="주기" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <ComboBox ItemsSource="{Binding BackupFrequencyOptions}"
+                                    <ComboBox AutomationProperties.Name="자동 백업 주기" ItemsSource="{Binding BackupFrequencyOptions}"
                                               SelectedItem="{Binding SelectedBackupFrequency}"
                                               Style="{StaticResource PosComboBoxStyle}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="실행 시각" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding BackupTimeText, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Tag="BackupTimeText" AutomationProperties.Name="백업 실행 시각"
+                                             AutomationProperties.HelpText="{Binding BackupTimeError}" Text="{Binding BackupTimeText, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource PosTextBoxStyle}" />
+                                    <TextBlock Text="{Binding BackupTimeError}" Style="{StaticResource ErrorTextStyle}" />
                                 </StackPanel>
                             </Grid>
 
                             <TextBlock Margin="0,16,0,8" Text="보존 개수" Style="{StaticResource FieldLabelTextStyle}" />
-                            <TextBox InputMethod.IsInputMethodEnabled="False"
+                            <TextBox Tag="BackupRetentionCountText" AutomationProperties.Name="백업 보존 개수"
+                                     AutomationProperties.HelpText="{Binding BackupRetentionError}" InputMethod.IsInputMethodEnabled="False"
                                      Text="{Binding BackupRetentionCountText, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource PosTextBoxStyle}" />
+                            <TextBlock Text="{Binding BackupRetentionError}" Style="{StaticResource ErrorTextStyle}" />
 
                             <WrapPanel Margin="0,16,0,0">
                                 <Button Margin="0,0,8,8"

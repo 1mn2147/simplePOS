@@ -3,7 +3,7 @@ using Pos.Core;
 
 namespace Pos.App.ViewModels;
 
-public abstract class VirtualInputViewModel : ObservableObject
+public abstract class VirtualInputViewModel : InputValidationViewModel
 {
     private static readonly Dictionary<char, char> ShiftedJamo = new()
     {
@@ -15,6 +15,8 @@ public abstract class VirtualInputViewModel : ObservableObject
         ['ㅐ'] = 'ㅒ',
         ['ㅔ'] = 'ㅖ',
     };
+    private static readonly IReadOnlyDictionary<string, string> NormalKeyLabels = ShiftedJamo.Keys.ToDictionary(key => key.ToString(), key => key.ToString());
+    private static readonly IReadOnlyDictionary<string, string> ShiftedKeyLabels = ShiftedJamo.ToDictionary(pair => pair.Key.ToString(), pair => pair.Value.ToString());
 
     private readonly KoreanInputComposer _composer = new();
     private bool _isInputPanelVisible;
@@ -25,12 +27,17 @@ public abstract class VirtualInputViewModel : ObservableObject
 
     protected VirtualInputViewModel()
     {
+        PropertyChanged += (_, args) =>
+        {
+            if (_activeTarget is not null && args.PropertyName != nameof(ActiveInputValue) && args.PropertyName != nameof(ActiveInputLabel))
+                OnPropertyChanged(nameof(ActiveInputValue));
+        };
         ShowKoreanKeyboardCommand = new RelayCommand<string>(ShowKoreanKeyboard);
         ShowNumericKeypadCommand = new RelayCommand<string>(ShowNumericKeypad);
         DismissInputPanelCommand = new RelayCommand(DismissInputPanel);
         ConfirmInputCommand = new RelayCommand(ConfirmInput);
         KoreanKeyCommand = new RelayCommand<string>(EnterKoreanKey);
-        ToggleKoreanShiftCommand = new RelayCommand(() => _isKoreanShift = !_isKoreanShift);
+        ToggleKoreanShiftCommand = new RelayCommand(() => IsKoreanShift = !IsKoreanShift);
         KoreanBackspaceCommand = new RelayCommand(BackspaceKorean);
         KoreanClearCommand = new RelayCommand(ClearKorean);
         NumericKeyCommand = new RelayCommand<string>(EnterNumericKey);
@@ -67,6 +74,53 @@ public abstract class VirtualInputViewModel : ObservableObject
     public ICommand NumericKeyCommand { get; }
     public ICommand NumericBackspaceCommand { get; }
     public ICommand NumericClearCommand { get; }
+    public bool IsKoreanShift
+    {
+        get => _isKoreanShift;
+        private set
+        {
+            if (!SetProperty(ref _isKoreanShift, value)) return;
+            OnPropertyChanged(nameof(KoreanKeyLabels));
+            OnPropertyChanged(nameof(KoreanShiftStateText));
+        }
+    }
+    public IReadOnlyDictionary<string, string> KoreanKeyLabels => IsKoreanShift ? ShiftedKeyLabels : NormalKeyLabels;
+    public string KoreanShiftStateText => IsKoreanShift ? "켜짐" : "꺼짐";
+
+    public string? ActiveInputTarget => _activeTarget;
+    public string ActiveInputLabel => _activeTarget switch
+    {
+        "Search" => "상품 검색", "ProductName" => "상품명", "Supplier" => "공급사",
+        "Price" => "가격 (원)", "Stock" => "재고", "Quantity" => "담을 수량", "Category" => "카테고리", _ => "입력",
+    };
+
+    public string ActiveInputValue
+    {
+        get => _activeTarget is null ? string.Empty : GetInputValue(_activeTarget);
+        set
+        {
+            if (_activeTarget is null) return;
+            SetInputValue(_activeTarget, value);
+            _composer.SetText(value);
+            OnPropertyChanged();
+        }
+    }
+
+    public override System.Collections.IEnumerable GetErrors(string? propertyName)
+    {
+        if (propertyName != nameof(ActiveInputValue)) return base.GetErrors(propertyName);
+        if (_activeTarget is null) return Array.Empty<string>();
+        return base.GetErrors(_activeTarget switch
+        {
+            "Price" => "PriceText", "Stock" => "StockText", "Search" => "SearchText", "Category" => "CategoryText", "Quantity" => "QuantityText", _ => _activeTarget,
+        });
+    }
+
+    protected override void OnValidationChanged()
+    {
+        base.OnValidationChanged();
+        RaiseErrorsChanged(nameof(ActiveInputValue));
+    }
 
     protected abstract string GetInputValue(string target);
     protected abstract void SetInputValue(string target, string value);
@@ -79,8 +133,11 @@ public abstract class VirtualInputViewModel : ObservableObject
         }
 
         _activeTarget = target;
+        OnPropertyChanged(nameof(ActiveInputLabel));
+        OnPropertyChanged(nameof(ActiveInputValue));
+        RaiseErrorsChanged(nameof(ActiveInputValue));
         _composer.SetText(GetInputValue(target));
-        _isKoreanShift = false;
+        IsKoreanShift = false;
         IsKoreanKeyboardVisible = true;
         IsNumericKeypadVisible = false;
         IsInputPanelVisible = true;
@@ -94,6 +151,10 @@ public abstract class VirtualInputViewModel : ObservableObject
         }
 
         _activeTarget = target;
+        IsKoreanShift = false;
+        OnPropertyChanged(nameof(ActiveInputLabel));
+        OnPropertyChanged(nameof(ActiveInputValue));
+        RaiseErrorsChanged(nameof(ActiveInputValue));
         IsKoreanKeyboardVisible = false;
         IsNumericKeypadVisible = true;
         IsInputPanelVisible = true;
@@ -106,6 +167,8 @@ public abstract class VirtualInputViewModel : ObservableObject
             return;
         }
 
+        if (_composer.Text != GetInputValue(_activeTarget)) _composer.SetText(GetInputValue(_activeTarget));
+
         string text;
         if (key == " ")
         {
@@ -114,15 +177,15 @@ public abstract class VirtualInputViewModel : ObservableObject
         else
         {
             var jamo = key[0];
-            if (_isKoreanShift && ShiftedJamo.TryGetValue(jamo, out var shifted))
+            if (IsKoreanShift && ShiftedJamo.TryGetValue(jamo, out var shifted))
             {
                 jamo = shifted;
             }
 
             text = _composer.InputJamo(jamo);
-            _isKoreanShift = false;
         }
 
+        IsKoreanShift = false;
         SetInputValue(_activeTarget, text);
     }
 
@@ -130,6 +193,7 @@ public abstract class VirtualInputViewModel : ObservableObject
     {
         if (_activeTarget is not null)
         {
+            if (_composer.Text != GetInputValue(_activeTarget)) _composer.SetText(GetInputValue(_activeTarget));
             SetInputValue(_activeTarget, _composer.Backspace());
         }
     }
@@ -142,6 +206,7 @@ public abstract class VirtualInputViewModel : ObservableObject
         }
 
         _composer.Clear();
+        IsKoreanShift = false;
         SetInputValue(_activeTarget, string.Empty);
     }
 
@@ -192,6 +257,6 @@ public abstract class VirtualInputViewModel : ObservableObject
         IsKoreanKeyboardVisible = false;
         IsNumericKeypadVisible = false;
         _activeTarget = null;
-        _isKoreanShift = false;
+        IsKoreanShift = false;
     }
 }

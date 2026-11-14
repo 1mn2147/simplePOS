@@ -2,10 +2,10 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
-    <!-- Genesis color system -->
-    <Color x:Key="ColorPrimary">#6366F1</Color>
-    <Color x:Key="ColorPrimaryHover">#4F46E5</Color>
-    <Color x:Key="ColorPrimaryPressed">#4338CA</Color>
+    <!-- Shared colors for the Korean Windows POS workspace. -->
+    <Color x:Key="ColorPrimary">#006DFF</Color>
+    <Color x:Key="ColorPrimaryHover">#005AD6</Color>
+    <Color x:Key="ColorPrimaryPressed">#0049B0</Color>
     <Color x:Key="ColorNeutral">#9C9C9C</Color>
     <Color x:Key="ColorBackground">#FAFAFA</Color>
     <Color x:Key="ColorSurface">#FFFFFF</Color>
@@ -13,9 +13,25 @@
     <Color x:Key="ColorTextPrimary">#0A0A0A</Color>
     <Color x:Key="ColorTextSecondary">#6B6B6B</Color>
     <Color x:Key="ColorBorder">#E8E8EC</Color>
+    <Color x:Key="ColorControlBorder">#8A8F98</Color>
+    <Color x:Key="ColorSurfaceAlternate">#F8FAFC</Color>
+    <Color x:Key="ColorSelection">#E7F0FF</Color>
+    <Color x:Key="ColorSelectionText">#102D55</Color>
+    <Color x:Key="ColorHeader">#1A283E</Color>
+    <Color x:Key="ColorHeaderHover">#243653</Color>
+    <Color x:Key="ColorHeaderPressed">#101D30</Color>
+    <Color x:Key="ColorHeaderMuted">#B9C3D2</Color>
+    <Color x:Key="ColorHeaderDivider">#40506A</Color>
+    <Color x:Key="ColorWorkspace">#EFEFF4</Color>
+    <Color x:Key="ColorBrandAccent">#F4D35E</Color>
+    <Color x:Key="ColorNavigationBackground">#101010</Color>
+    <Color x:Key="ColorNavigationMuted">#AEB8C8</Color>
+    <Color x:Key="ColorNavigationHover">#202020</Color>
+    <Color x:Key="ColorNavigationPressed">#2A2A2A</Color>
+    <Color x:Key="ColorNavigationSelected">#181818</Color>
     <Color x:Key="ColorSuccess">#10B981</Color>
     <Color x:Key="ColorWarning">#F59E0B</Color>
-    <Color x:Key="ColorError">#EF4444</Color>
+    <Color x:Key="ColorError">#B91C1C</Color>
     <Color x:Key="ColorOnPrimary">#FFFFFF</Color>
 
     <SolidColorBrush x:Key="BrushPrimary" Color="{StaticResource ColorPrimary}" />
@@ -28,19 +44,36 @@
     <SolidColorBrush x:Key="BrushTextPrimary" Color="{StaticResource ColorTextPrimary}" />
     <SolidColorBrush x:Key="BrushTextSecondary" Color="{StaticResource ColorTextSecondary}" />
     <SolidColorBrush x:Key="BrushBorder" Color="{StaticResource ColorBorder}" />
+    <SolidColorBrush x:Key="BrushControlBorder" Color="{StaticResource ColorControlBorder}" />
+    <SolidColorBrush x:Key="BrushSurfaceAlternate" Color="{StaticResource ColorSurfaceAlternate}" />
+    <SolidColorBrush x:Key="BrushSelection" Color="{StaticResource ColorSelection}" />
+    <SolidColorBrush x:Key="BrushSelectionText" Color="{StaticResource ColorSelectionText}" />
+    <SolidColorBrush x:Key="BrushHeader" Color="{StaticResource ColorHeader}" />
+    <SolidColorBrush x:Key="BrushHeaderHover" Color="{StaticResource ColorHeaderHover}" />
+    <SolidColorBrush x:Key="BrushHeaderPressed" Color="{StaticResource ColorHeaderPressed}" />
+    <SolidColorBrush x:Key="BrushHeaderMuted" Color="{StaticResource ColorHeaderMuted}" />
+    <SolidColorBrush x:Key="BrushHeaderDivider" Color="{StaticResource ColorHeaderDivider}" />
+    <SolidColorBrush x:Key="BrushWorkspace" Color="{StaticResource ColorWorkspace}" />
+    <SolidColorBrush x:Key="BrushBrandAccent" Color="{StaticResource ColorBrandAccent}" />
+    <SolidColorBrush x:Key="BrushNavigationBackground" Color="{StaticResource ColorNavigationBackground}" />
+    <SolidColorBrush x:Key="BrushNavigationMuted" Color="{StaticResource ColorNavigationMuted}" />
+    <SolidColorBrush x:Key="BrushNavigationHover" Color="{StaticResource ColorNavigationHover}" />
+    <SolidColorBrush x:Key="BrushNavigationPressed" Color="{StaticResource ColorNavigationPressed}" />
+    <SolidColorBrush x:Key="BrushNavigationSelected" Color="{StaticResource ColorNavigationSelected}" />
     <SolidColorBrush x:Key="BrushSuccess" Color="{StaticResource ColorSuccess}" />
     <SolidColorBrush x:Key="BrushWarning" Color="{StaticResource ColorWarning}" />
     <SolidColorBrush x:Key="BrushError" Color="{StaticResource ColorError}" />
     <SolidColorBrush x:Key="BrushOnPrimary" Color="{StaticResource ColorOnPrimary}" />
-    <SolidColorBrush x:Key="BrushPrimaryTint" Color="#EEF2FF" />
+    <SolidColorBrush x:Key="BrushPrimaryTint" Color="#EEF4FF" />
     <SolidColorBrush x:Key="BrushSuccessTint" Color="#ECFDF5" />
     <SolidColorBrush x:Key="BrushWarningTint" Color="#FFFBEB" />
     <SolidColorBrush x:Key="BrushErrorTint" Color="#FEF2F2" />
+    <SolidColorBrush x:Key="BrushErrorPressed" Color="#FEE2E2" />
 
     <!-- Local Korean-capable fallbacks keep rendering deterministic offline. -->
-    <FontFamily x:Key="FontDisplay">General Sans, Malgun Gothic, Segoe UI</FontFamily>
-    <FontFamily x:Key="FontBody">DM Sans, Malgun Gothic, Segoe UI</FontFamily>
-    <FontFamily x:Key="FontMono">JetBrains Mono, D2Coding, Consolas</FontFamily>
+    <FontFamily x:Key="FontDisplay">Malgun Gothic, Segoe UI</FontFamily>
+    <FontFamily x:Key="FontBody">Malgun Gothic, Segoe UI</FontFamily>
+    <FontFamily x:Key="FontMono">Consolas, Malgun Gothic</FontFamily>
 
     <sys:Double x:Key="FontSizePageTitle">28</sys:Double>
     <sys:Double x:Key="FontSizeSectionTitle">20</sys:Double>

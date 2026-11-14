@@ -35,6 +35,33 @@ public partial class MainWindow : Window
 
     private async void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (DataContext is ShellViewModel currentShell)
+        {
+            if (currentShell.CurrentPage is VirtualInputViewModel { IsInputPanelVisible: true } input && e.Key is Key.Escape or Key.Enter && Keyboard.Modifiers == ModifierKeys.None)
+            {
+                input.ConfirmInputCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.Z && !IsTextEntryActive() && currentShell.MainPage is { } main && ReferenceEquals(currentShell.CurrentPage, main))
+            {
+                if (main.UndoCartCommand.CanExecute(null)) main.UndoCartCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.Enter && currentShell.CurrentPage is ProductListViewModel products)
+            {
+                if (products.AddToCartCommand.CanExecute(null)) products.AddToCartCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.Enter && currentShell.CurrentPage is MainPageViewModel sale)
+            {
+                if (sale.CompleteSaleCommand.CanExecute(null)) sale.CompleteSaleCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+        }
         if (DataContext is not ShellViewModel shell || e.Key is not (Key.Enter or Key.Tab))
         {
             return;

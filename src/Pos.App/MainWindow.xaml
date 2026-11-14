@@ -13,6 +13,9 @@
         MinHeight="640"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource BrushBackground}"
+        FontFamily="{StaticResource FontBody}"
+        FontSize="{StaticResource FontSizeBody}"
+        Foreground="{StaticResource BrushTextPrimary}"
         PreviewTextInput="OnPreviewTextInput"
         PreviewKeyDown="OnPreviewKeyDown">
     <Window.Resources>

@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-13T03:56:22Z",
+  "title": "Design System: Simple POS",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "판매 동작 파랑"
+      },
+      "header": {
+        "role": "neutral",
+        "displayName": "판매 헤더 남색"
+      },
+      "navigation-background": {
+        "role": "neutral",
+        "displayName": "하단 탐색 검정"
+      },
+      "selection": {
+        "role": "neutral",
+        "displayName": "선택 행 옅은 파랑"
+      },
+      "control-border": {
+        "role": "neutral",
+        "displayName": "입력 경계 회색"
+      }
+    },
+    "typographyMeta": {
+      "page-title": {
+        "displayName": "화면 제목",
+        "purpose": "한국어 화면의 최상위 제목."
+      },
+      "body": {
+        "displayName": "작업 본문",
+        "purpose": "상품명과 입력, 일상적인 작업 문구."
+      },
+      "amount": {
+        "displayName": "총액",
+        "purpose": "판매 총액. WPF Typography.NumeralAlignment=Tabular 적용."
+      }
+    },
+    "breakpoints": [
+      {
+        "name": "management-single-column-below",
+        "value": "1000px"
+      },
+      {
+        "name": "quick-add-three-columns",
+        "value": "1050px"
+      },
+      {
+        "name": "quick-add-four-columns-and-side-checkout",
+        "value": "1200px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "주요 동작",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "WPF PrimaryButtonStyle의 시각 미리보기. 실제 동작은 앱에서 검증한다.",
+      "html": "<button class=\"ds-primary\">장바구니 담기</button>",
+      "css": ".ds-primary{font-family:'Malgun Gothic','Segoe UI',sans-serif;font-size:15px;min-height:48px;min-width:48px;padding:0 16px;border:1px solid;border-radius:6px;font-weight:600;cursor:pointer;background:#006DFF;color:#FFFFFF;border-color:#006DFF}.ds-primary:hover{background:#005AD6;border-color:#005AD6}.ds-primary:active{background:#0049B0;border-color:#0049B0}.ds-primary:focus-visible{outline:3px solid #006DFF;outline-offset:3px;}.ds-primary:disabled{opacity:.45;cursor:default}"
+    },
+    {
+      "name": "보조 동작",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "별도 색을 추가하지 않는 보조 작업.",
+      "html": "<button class=\"ds-secondary\">파일 선택</button>",
+      "css": ".ds-secondary{font-family:'Malgun Gothic','Segoe UI',sans-serif;font-size:15px;min-height:48px;min-width:48px;padding:0 16px;border:1px solid;border-radius:6px;font-weight:600;cursor:pointer;background:#FFFFFF;color:#0A0A0A;border-color:#E8E8EC}.ds-secondary:hover{background:#F4F4F5;border-color:#006DFF}.ds-secondary:active{background:#EEF4FF}.ds-secondary:focus-visible{outline:3px solid #006DFF;outline-offset:3px;}.ds-secondary:disabled{opacity:.45;cursor:default}"
+    },
+    {
+      "name": "비우기",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "장바구니 비우기 등 주의가 필요한 동작.",
+      "html": "<button class=\"ds-danger\">비우기</button>",
+      "css": ".ds-danger{font-family:'Malgun Gothic','Segoe UI',sans-serif;font-size:15px;min-height:48px;min-width:48px;padding:0 16px;border:1px solid;border-radius:6px;font-weight:600;cursor:pointer;background:#FFFFFF;color:#B91C1C;border-color:#B91C1C}.ds-danger:hover{background:#FEF2F2}.ds-danger:active{background:#FEE2E2}.ds-danger:focus-visible{outline:3px solid #006DFF;outline-offset:3px;}.ds-danger:disabled{opacity:.45;cursor:default}"
+    },
+    {
+      "name": "입력란",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "TextBox의 시각 미리보기. 오류는 경계와 인접한 설명으로 전달한다.",
+      "html": "<label class=\"ds-field\">상품명<input value=\"아메리카노\" /></label>",
+      "css": ".ds-field{font-family:'Malgun Gothic','Segoe UI',sans-serif;font-size:15px;display:grid;gap:8px;color:#0A0A0A}.ds-field input{font-family:'Malgun Gothic','Segoe UI',sans-serif;font-size:15px;min-height:48px;padding:0 14px;border:1px solid #8A8F98;border-radius:6px;background:#FFFFFF;color:#0A0A0A;caret-color:#0A0A0A}.ds-field input:focus{outline:2px solid #006DFF;outline-offset:-2px}.ds-field input::selection{background:#E7F0FF;color:#102D55}.ds-field input:disabled{background:#F4F4F5;color:#9C9C9C}"
+    },
+    {
+      "name": "하단 탐색",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "실제 WPF 버튼은 현재 화면을 UI Automation ItemStatus로 전달한다.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"화면 이동\"><button aria-current=\"page\">메인</button><button>상품 목록</button><button>상품 추가</button><button>설정</button></nav>",
+      "css": ".ds-nav{display:flex;padding:6px 16px;gap:8px;background:#101010}.ds-nav button{font-family:'Malgun Gothic','Segoe UI',sans-serif;font-size:15px;min-width:112px;min-height:64px;padding:0 20px;flex:1;background:transparent;color:#AEB8C8;border:0;border-top:3px solid transparent;border-radius:6px;font-weight:600}.ds-nav button:hover{background:#202020;color:#FFFFFF}.ds-nav button:active{background:#2A2A2A}.ds-nav button[aria-current]{background:#181818;color:#FFFFFF;border-top-color:#006DFF;font-weight:700}.ds-nav button:focus-visible{outline:3px solid #006DFF;outline-offset:3px;}"
+    },
+    {
+      "name": "선택한 상품 행",
+      "kind": "custom",
+      "refersTo": "data-row",
+      "description": "선택 행과 포커스 셀을 별도로 구별한다.",
+      "html": "<div class=\"ds-row\" role=\"row\" aria-selected=\"true\"><span>아메리카노</span><span tabindex=\"0\">4,500원</span><span>12</span></div>",
+      "css": ".ds-row{font-family:'Malgun Gothic','Segoe UI',sans-serif;font-size:15px;display:grid;grid-template-columns:minmax(140px,2fr) 140px 100px;align-items:center;min-height:56px;background:#E7F0FF;color:#102D55;font-weight:600;border-bottom:1px solid #E8E8EC}.ds-row span{padding:0 12px}.ds-row span+span{text-align:right;font-variant-numeric:tabular-nums}.ds-row span:focus-visible{outline:2px solid #006DFF;outline-offset:-2px}"
+    },
+    {
+      "name": "빠른 추가 타일",
+      "kind": "button",
+      "refersTo": "quick-add",
+      "description": "높이 108 DIP, 안쪽 여백 8 DIP의 타일에 상품명 두 줄, 상태, 가격을 배치한다.",
+      "html": "<button class=\"ds-quick\"><span class=\"ds-quick-name\">따뜻한 아메리카노</span><span class=\"ds-quick-status\"></span><strong>4,500원</strong></button>",
+      "css": ".ds-quick{font-family:'Malgun Gothic','Segoe UI',sans-serif;font-size:15px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;width:168px;height:108px;margin:4px;padding:8px;border:1px solid #E8E8EC;border-radius:6px;background:#FFFFFF;color:#0A0A0A;text-align:left}.ds-quick-name{max-height:40px;line-height:20px;overflow:hidden}.ds-quick-status{font-size:12px;line-height:14px;max-height:28px;overflow:hidden;color:#6B6B6B}.ds-quick-status:empty{display:none}.ds-quick strong{align-self:flex-end;line-height:20px;font-variant-numeric:tabular-nums}.ds-quick:hover{background:#F4F4F5;border-color:#006DFF}.ds-quick:active{background:#EEF4FF}.ds-quick:focus-visible{outline:3px solid #006DFF;outline-offset:3px;}.ds-quick:disabled{opacity:.45}"
+    }
+  ],
+  "narrative": {
+    "northStar": "판매 흐름을 지켜 주는 계산대",
+    "overview": "반복해서 상품을 찾고, 수량과 금액을 확인하고, 판매를 기록하는 한국어 Windows 작업 화면이다. 밝은 상품·입력 영역과 어두운 탐색 영역을 구분하고 파랑으로 주요 동작과 현재 상태를 알린다. 매장 직원이 익숙한 표, 입력란, 버튼을 사용하며 장식보다 정보의 위치와 조작 결과를 명확하게 만든다.",
+    "keyCharacteristics": [
+      "한국어 로컬 글꼴과 고정 역할별 크기.",
+      "밝은 작업 영역, 어두운 탐색, 파란 주요 동작.",
+      "터치와 키보드 모두에서 확인할 수 있는 선택·포커스.",
+      "금액, 수량, 상품명을 우선하는 읽기 순서."
+    ],
+    "dos": [
+      "공통 XAML 토큰과 스타일을 사용하고 같은 역할을 모든 페이지에서 같은 방식으로 표시한다.",
+      "긴 한국어 상품명, 최대 가격, 품절, 빈 목록, 키보드 입력 상태로 화면을 확인한다.",
+      "색뿐 아니라 문자·윤곽선·굵기로 상태와 현재 위치를 전달한다."
+    ],
+    "donts": [
+      "판매 작업 영역을 확보하려고 글자나 터치 목표를 일괄 축소한다.",
+      "로컬 페이지에 동일한 의미의 색·버튼 스타일을 다시 정의한다.",
+      "저장 중·오류·복구 동작을 장식 효과로 대체한다."
+    ]
+  }
+}

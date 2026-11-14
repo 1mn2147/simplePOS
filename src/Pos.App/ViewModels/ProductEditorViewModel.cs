@@ -12,6 +12,7 @@ public sealed class ProductEditorViewModel : VirtualInputViewModel
     private readonly IDialogService _dialogs;
     private readonly List<Product> _existingProducts = [];
     private Product? _original;
+    private EditorState? _loadedState;
     private string _productName = string.Empty;
     private string _priceText = string.Empty;
     private string _barcode = string.Empty;
@@ -22,13 +23,9 @@ public sealed class ProductEditorViewModel : VirtualInputViewModel
     private bool _isQuickAdd;
     private bool _isActive = true;
     private string _editorStatusText = string.Empty;
-    private string _productNameError = string.Empty;
-    private string _priceError = string.Empty;
-    private string _barcodeError = string.Empty;
-    private string _supplierError = string.Empty;
-    private string _stockError = string.Empty;
-    private string _categoryError = string.Empty;
-    private string _validationSummary = string.Empty;
+    private bool _validateOnChange;
+    private Guid _editingId;
+    private bool _startedFromUnknownBarcode;
 
     public ProductEditorViewModel(
         IPosRepository repository,
@@ -40,17 +37,24 @@ public sealed class ProductEditorViewModel : VirtualInputViewModel
         _dialogs = dialogs;
         SaveProductCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new AsyncRelayCommand(CancelAsync);
+        PropertyChanged += (_, args) =>
+        {
+            if (_validateOnChange && args.PropertyName is nameof(ProductName) or nameof(PriceText) or nameof(Barcode) or nameof(Supplier) or nameof(StockText) or nameof(CategoryText))
+                ValidateInput();
+        };
     }
 
     public ObservableCollection<string> Categories { get; } = [];
     public Func<Task>? Completed { get; set; }
+    public Product? SavedProduct { get; private set; }
+    public string SavedProductNotice { get; private set; } = string.Empty;
 
     public string EditorTitle => _original is null ? "상품 추가" : "상품 수정";
 
     public string EditorStatusText
     {
         get => _editorStatusText;
-        private set => SetProperty(ref _editorStatusText, value);
+        private set { if (SetProperty(ref _editorStatusText, value)) OnPropertyChanged(nameof(EditorFeedbackText)); }
     }
 
     public string ProductName { get => _productName; set => SetProperty(ref _productName, value); }
@@ -75,14 +79,17 @@ public sealed class ProductEditorViewModel : VirtualInputViewModel
     public bool IsQuickAdd { get => _isQuickAdd; set => SetProperty(ref _isQuickAdd, value); }
     public bool IsActive { get => _isActive; set => SetProperty(ref _isActive, value); }
 
-    public string ProductNameError { get => _productNameError; private set => SetProperty(ref _productNameError, value); }
-    public string PriceError { get => _priceError; private set => SetProperty(ref _priceError, value); }
-    public string BarcodeError { get => _barcodeError; private set => SetProperty(ref _barcodeError, value); }
-    public string SupplierError { get => _supplierError; private set => SetProperty(ref _supplierError, value); }
-    public string StockError { get => _stockError; private set => SetProperty(ref _stockError, value); }
-    public string CategoryError { get => _categoryError; private set => SetProperty(ref _categoryError, value); }
-    public string ValidationSummary { get => _validationSummary; private set => SetProperty(ref _validationSummary, value); }
-    public bool HasValidationSummary => ValidationSummary.Length > 0;
+    public string ProductNameError => GetError(nameof(ProductName));
+    public string PriceError => GetError(nameof(PriceText));
+    public string BarcodeError => GetError(nameof(Barcode));
+    public string SupplierError => GetError(nameof(Supplier));
+    public string StockError => GetError(nameof(StockText));
+    public string CategoryError => GetError(nameof(CategoryText));
+    public string ValidationSummary => HasErrors ? $"입력 오류 {ErrorCount}개를 확인하세요." : string.Empty;
+    public bool HasValidationSummary => HasErrors;
+    public string EditorFeedbackText => HasErrors ? ValidationSummary : EditorStatusText;
+    public override string? FirstInvalidField => new[] { nameof(ProductName), nameof(PriceText), nameof(Barcode), nameof(Supplier), nameof(StockText), nameof(CategoryText) }
+        .FirstOrDefault(inputName => GetError(inputName).Length > 0);
 
     public ICommand SaveProductCommand { get; }
     public ICommand CancelCommand { get; }
@@ -92,6 +99,11 @@ public sealed class ProductEditorViewModel : VirtualInputViewModel
         string? barcode = null,
         bool preselectQuickAdd = false)
     {
+        _validateOnChange = false;
+        SavedProduct = null;
+        SavedProductNotice = string.Empty;
+        _startedFromUnknownBarcode = product is null && !string.IsNullOrWhiteSpace(barcode);
+        _editingId = product?.Id ?? Guid.NewGuid();
         var products = await _repository.GetProductsAsync();
         _existingProducts.Clear();
         _existingProducts.AddRange(products);
@@ -115,8 +127,12 @@ public sealed class ProductEditorViewModel : VirtualInputViewModel
         SelectedCategory = product?.Category;
         IsQuickAdd = product?.QuickAdd ?? preselectQuickAdd;
         IsActive = product?.IsActive ?? true;
-        EditorStatusText = string.Empty;
-        ClearErrors();
+        EditorStatusText = _startedFromUnknownBarcode
+            ? "미등록 바코드입니다. 상품을 저장한 뒤 다시 스캔해 담으세요."
+            : string.Empty;
+        SetValidationErrors(new Dictionary<string, string>());
+        DismissInputPanelCommand.Execute(null);
+        _loadedState = CaptureState();
         OnPropertyChanged(nameof(EditorTitle));
     }
 
@@ -124,6 +140,7 @@ public sealed class ProductEditorViewModel : VirtualInputViewModel
     {
         "ProductName" => ProductName,
         "Supplier" => Supplier,
+        "Category" => CategoryText,
         "Price" => PriceText,
         "Stock" => StockText,
         _ => string.Empty,
@@ -135,6 +152,7 @@ public sealed class ProductEditorViewModel : VirtualInputViewModel
         {
             case "ProductName": ProductName = value; break;
             case "Supplier": Supplier = value; break;
+            case "Category": CategoryText = value; break;
             case "Price": PriceText = value; break;
             case "Stock": StockText = value; break;
         }
@@ -142,46 +160,12 @@ public sealed class ProductEditorViewModel : VirtualInputViewModel
 
     private async Task SaveAsync()
     {
-        ClearErrors();
-        if (!long.TryParse(PriceText, out var price))
+        ConfirmInputCommand.Execute(null);
+        _validateOnChange = true;
+        var (product, validation) = ValidateInput();
+        if (HasErrors)
         {
-            PriceError = "가격은 0 이상의 정수로 입력하세요.";
-        }
-
-        int? stock = null;
-        if (StockText.Length > 0)
-        {
-            if (int.TryParse(StockText, out var parsedStock))
-            {
-                stock = parsedStock;
-            }
-            else
-            {
-                StockError = "재고는 비워 두거나 0 이상의 정수로 입력하세요.";
-            }
-        }
-
-        var product = new Product
-        {
-            Id = _original?.Id ?? Guid.NewGuid(),
-            Name = ProductValidator.NormalizeText(ProductName),
-            Price = price,
-            Barcode = ProductValidator.NormalizeBarcode(Barcode),
-            Supplier = ProductValidator.NormalizeText(Supplier),
-            Stock = stock,
-            Category = ProductValidator.NormalizeText(CategoryText),
-            QuickAdd = IsQuickAdd,
-            SortOrder = _original?.SortOrder ?? (_existingProducts.Count == 0 ? 0 : _existingProducts.Max(item => item.SortOrder) + 1),
-            IsActive = IsActive,
-            UpdatedAt = DateTimeOffset.UtcNow,
-        };
-
-        var validation = _validator.Validate(product, _existingProducts);
-        ApplyValidation(validation);
-        if (!validation.IsValid || PriceError.Length > 0 || StockError.Length > 0)
-        {
-            ValidationSummary = "입력값을 확인하세요.";
-            OnPropertyChanged(nameof(HasValidationSummary));
+            FocusFirstError();
             return;
         }
 
@@ -198,6 +182,13 @@ public sealed class ProductEditorViewModel : VirtualInputViewModel
         {
             EditorStatusText = "저장 중";
             await _repository.SaveProductAsync(product);
+            _loadedState = CaptureState();
+            SavedProduct = product;
+            SavedProductNotice = _startedFromUnknownBarcode
+                ? $"{product.Name} · 등록 완료. 다시 스캔해 장바구니에 담으세요."
+                : _original is null
+                    ? $"{product.Name} · 상품 등록이 완료되었습니다."
+                    : $"{product.Name} · 상품 정보가 저장되었습니다.";
             EditorStatusText = "저장됨";
             if (Completed is not null)
             {
@@ -211,32 +202,60 @@ public sealed class ProductEditorViewModel : VirtualInputViewModel
         }
     }
 
-    private Task CancelAsync() => Completed?.Invoke() ?? Task.CompletedTask;
+    private Task CancelAsync() => ConfirmDiscardChanges() ? Completed?.Invoke() ?? Task.CompletedTask : Task.CompletedTask;
 
-    private void ApplyValidation(ProductValidationResult validation)
+    public bool HasUnsavedChanges => _loadedState is not null && _loadedState != CaptureState();
+
+    public bool ConfirmDiscardChanges()
     {
-        foreach (var issue in validation.Issues.Where(issue => issue.Severity == ProductValidationSeverity.Error))
-        {
-            switch (issue.PropertyName)
-            {
-                case nameof(Product.Name): ProductNameError = issue.Message; break;
-                case nameof(Product.Price): PriceError = issue.Message; break;
-                case nameof(Product.Barcode): BarcodeError = issue.Message; break;
-                case nameof(Product.Stock): StockError = issue.Message; break;
-                case nameof(Product.Category): CategoryError = issue.Message; break;
-            }
-        }
+        if (!HasUnsavedChanges) return true;
+        if (!_dialogs.Confirm("저장하지 않은 상품 정보가 있습니다. 변경 내용을 버리고 이동할까요?", "상품 정보 확인")) return false;
+        _loadedState = CaptureState();
+        return true;
     }
 
-    private void ClearErrors()
+    private EditorState CaptureState() => new(ProductName, PriceText, Barcode, Supplier, StockText, CategoryText, IsQuickAdd, IsActive);
+    private sealed record EditorState(string Name, string Price, string Barcode, string Supplier, string Stock, string Category, bool QuickAdd, bool Active);
+
+    private (Product Product, ProductValidationResult Validation) ValidateInput()
     {
-        ProductNameError = string.Empty;
-        PriceError = string.Empty;
-        BarcodeError = string.Empty;
-        SupplierError = string.Empty;
-        StockError = string.Empty;
-        CategoryError = string.Empty;
-        ValidationSummary = string.Empty;
-        OnPropertyChanged(nameof(HasValidationSummary));
+        var priceParsed = long.TryParse(PriceText, out var price);
+        var stockParsed = int.TryParse(StockText, out var stock);
+        var product = new Product
+        {
+            Id = _editingId,
+            Name = ProductValidator.NormalizeText(ProductName),
+            Price = price,
+            Barcode = ProductValidator.NormalizeBarcode(Barcode),
+            Supplier = ProductValidator.NormalizeText(Supplier),
+            Stock = StockText.Length == 0 || !stockParsed ? null : stock,
+            Category = ProductValidator.NormalizeText(CategoryText),
+            QuickAdd = IsQuickAdd,
+            SortOrder = _original?.SortOrder ?? (_existingProducts.Count == 0 ? 0 : _existingProducts.Max(item => item.SortOrder) + 1),
+            IsActive = IsActive,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        };
+        var validation = _validator.Validate(product, _existingProducts);
+        var errors = new Dictionary<string, string>();
+        foreach (var issue in validation.Issues.Where(issue => issue.Severity == ProductValidationSeverity.Error))
+        {
+            var field = issue.PropertyName switch
+            {
+                nameof(Product.Name) => nameof(ProductName), nameof(Product.Price) => nameof(PriceText),
+                nameof(Product.Stock) => nameof(StockText), nameof(Product.Category) => nameof(CategoryText), _ => issue.PropertyName,
+            };
+            errors[field] = issue.Message;
+        }
+        if (!priceParsed) errors[nameof(PriceText)] = $"가격은 0~{ProductValidator.MaximumPrice:N0}원 범위의 정수로 입력하세요.";
+        if (StockText.Length > 0 && !stockParsed) errors[nameof(StockText)] = "재고는 비워 두거나 0 이상의 정수로 입력하세요.";
+        SetValidationErrors(errors);
+        return (product, validation);
+    }
+
+    protected override void OnValidationChanged()
+    {
+        base.OnValidationChanged();
+        foreach (var property in new[] { nameof(ProductNameError), nameof(PriceError), nameof(BarcodeError), nameof(SupplierError), nameof(StockError), nameof(CategoryError), nameof(ValidationSummary), nameof(HasValidationSummary), nameof(EditorFeedbackText) })
+            OnPropertyChanged(property);
     }
 }

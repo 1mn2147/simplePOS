@@ -13,11 +13,6 @@
                 <ResourceDictionary Source="../../Resources/Controls.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <SolidColorBrush x:Key="BrushNavigationBackground" Color="#101010" />
-            <SolidColorBrush x:Key="BrushNavigationMuted" Color="#8D97A8" />
-            <SolidColorBrush x:Key="BrushNavigationHover" Color="#202020" />
-            <SolidColorBrush x:Key="BrushNavigationSelected" Color="#181818" />
-
             <Style x:Key="DarkNavigationButtonStyle"
                    TargetType="Button"
                    BasedOn="{StaticResource PosButtonBaseStyle}">
@@ -28,13 +23,14 @@
                 <Setter Property="BorderBrush" Value="Transparent" />
                 <Setter Property="BorderThickness" Value="0,3,0,0" />
                 <Setter Property="Foreground" Value="{StaticResource BrushNavigationMuted}" />
+                <Setter Property="AutomationProperties.ItemStatus" Value="선택되지 않음" />
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
                         <Setter Property="Background" Value="{StaticResource BrushNavigationHover}" />
-                        <Setter Property="Foreground" Value="White" />
+                        <Setter Property="Foreground" Value="{StaticResource BrushOnPrimary}" />
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
-                        <Setter Property="Background" Value="#2A2A2A" />
+                        <Setter Property="Background" Value="{StaticResource BrushNavigationPressed}" />
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -47,8 +43,9 @@
                                  Value="{x:Static viewModels:NavigationSection.Main}">
                         <Setter Property="Background" Value="{StaticResource BrushNavigationSelected}" />
                         <Setter Property="BorderBrush" Value="{StaticResource BrushPrimary}" />
-                        <Setter Property="Foreground" Value="White" />
+                        <Setter Property="Foreground" Value="{StaticResource BrushOnPrimary}" />
                         <Setter Property="FontWeight" Value="Bold" />
+                        <Setter Property="AutomationProperties.ItemStatus" Value="현재 화면" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
@@ -61,8 +58,9 @@
                                  Value="{x:Static viewModels:NavigationSection.ProductList}">
                         <Setter Property="Background" Value="{StaticResource BrushNavigationSelected}" />
                         <Setter Property="BorderBrush" Value="{StaticResource BrushPrimary}" />
-                        <Setter Property="Foreground" Value="White" />
+                        <Setter Property="Foreground" Value="{StaticResource BrushOnPrimary}" />
                         <Setter Property="FontWeight" Value="Bold" />
+                        <Setter Property="AutomationProperties.ItemStatus" Value="현재 화면" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
@@ -75,8 +73,9 @@
                                  Value="{x:Static viewModels:NavigationSection.ProductEditor}">
                         <Setter Property="Background" Value="{StaticResource BrushNavigationSelected}" />
                         <Setter Property="BorderBrush" Value="{StaticResource BrushPrimary}" />
-                        <Setter Property="Foreground" Value="White" />
+                        <Setter Property="Foreground" Value="{StaticResource BrushOnPrimary}" />
                         <Setter Property="FontWeight" Value="Bold" />
+                        <Setter Property="AutomationProperties.ItemStatus" Value="현재 화면" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
@@ -89,8 +88,9 @@
                                  Value="{x:Static viewModels:NavigationSection.Settings}">
                         <Setter Property="Background" Value="{StaticResource BrushNavigationSelected}" />
                         <Setter Property="BorderBrush" Value="{StaticResource BrushPrimary}" />
-                        <Setter Property="Foreground" Value="White" />
+                        <Setter Property="Foreground" Value="{StaticResource BrushOnPrimary}" />
                         <Setter Property="FontWeight" Value="Bold" />
+                        <Setter Property="AutomationProperties.ItemStatus" Value="현재 화면" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>

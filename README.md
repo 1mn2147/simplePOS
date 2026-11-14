@@ -16,10 +16,20 @@ Get-FileHash .\SimplePOS-1.0.3-win-x64.exe -Algorithm SHA256
 
 - 바코드 스캔, 미등록 바코드 상품 추가 연결, 4열 빠른 추가
 - 장바구니 수량 조절, 상품 수정/제거, 비우기, 판매 완료
+- 상품 검색 후 수량을 지정해 장바구니 담기, 마지막 삭제/비우기 되돌리기 (`Ctrl+Z`)
+- 같은 Excel DB의 설정 저장/다시 불러오기 시 장바구니 유지, 판매 중 DB 전환 방지
 - 판매 완료 시 재고 차감과 `Sales`/`SaleItems` 이력의 원자 저장
 - 품절 시 차단, 경고 후 허용, 경고 없는 그냥 허용 정책
 - 상품 검색, 추가/수정, 카테고리, 공급사, 재고, 활성 상태
 - 두벌식 가상 한글 키보드와 숫자 키패드
+- 입력 옆 `한글`/`숫자` 버튼으로 키보드 열기, `Esc`로 닫기, 검색 상품 담기는 `Ctrl+Enter`
+- 판매 화면에서 `Ctrl+Enter`로 판매 확인, 저장 성공은 팝업 대신 8초간 화면 안내로 표시
+- 상품·설정·수량 입력 오류의 필드 강조와 첫 오류 포커스, 수정 중 오류 갱신
+- 실제 장바구니 추가 성공에만 스캔 성공음, 최근 추가 상품·수량 안내와 해당 행 자동 표시
+- 상품 등록·수정 후 복귀 화면의 완료 안내, 첫 상품 등록과 검색 결과 없음의 다음 행동 안내
+- 설정 수정 중 표시와 미저장 이동 확인, 현재 DB만 새로고침할 때 수정 중인 설정 유지
+- 좁은 창의 관리 폼 1열 배치, 긴 상품명·큰 금액 대응, 공통 입력·선택·키보드 포커스 스타일
+- 한글 키보드 Shift 상태·변환 문자 표시와 카테고리 입력 지원
 - Excel 원본 보존 마이그레이션과 외부 변경 감지
 - 날짜 기반 주기/수동 백업, SHA-256 및 Excel 재열기 검증, 보존 개수
 - Windows 시작프로그램 등록/해제와 중복 실행 방지
@@ -39,7 +49,12 @@ $env:NUGET_PACKAGES = Join-Path $PWD '.nuget\packages'
 dotnet restore SimplePOS.sln
 dotnet build SimplePOS.sln --configuration Release
 dotnet test tests\Pos.Tests\Pos.Tests.csproj --configuration Release
+dotnet test tests\Pos.App.Tests\Pos.App.Tests.csproj --configuration Release
 ```
+
+`Pos.App.Tests`는 Windows WPF 판매 흐름을 별도 임시 데이터로 검증한다. 기존 카탈로그 마이그레이션 테스트 1개는 `상품목록.xlsx` 샘플 파일이 필요하다.
+
+화면을 변경할 때는 [DESIGN.md](DESIGN.md)의 POS 디자인 기준을 따른다. UI 테스트는 최소 창 크기, 긴 상품명·최대 금액, 가상 키보드, 스캔 결과, 설정 초안 보존, 네이티브 컨트롤의 자동화 동작을 포함한다. `SIMPLEPOS_QA_OUTPUT` 환경 변수에 폴더를 지정하면 주요 검증 화면을 PNG로 저장한다. 고배율 PNG는 렌더링 검증이며 실제 Windows 배율 변경이나 물리 터치·스캐너 검증을 대신하지 않는다.
 
 단일 EXE 게시:
 

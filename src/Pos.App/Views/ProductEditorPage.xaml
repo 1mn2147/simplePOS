@@ -6,7 +6,7 @@
              xmlns:controls="clr-namespace:Pos.App.Views.Controls"
              mc:Ignorable="d"
              d:DesignHeight="720"
-             d:DesignWidth="1280">
+             d:DesignWidth="1280" SizeChanged="OnPageSizeChanged">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -19,6 +19,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
@@ -36,8 +37,8 @@
                     <TextBlock Text="{Binding EditorTitle, FallbackValue=상품 추가}"
                                Style="{StaticResource PageTitleTextStyle}" />
                     <TextBlock Margin="0,4,0,0"
-                               Text="{Binding EditorStatusText}"
-                               Style="{StaticResource MutedTextStyle}" />
+                               Text="{Binding EditorFeedbackText}"
+                               Style="{StaticResource ValidationFeedbackTextStyle}" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <Button Margin="0,0,8,0"
@@ -54,11 +55,12 @@
         <ScrollViewer Grid.Row="1"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
-            <Grid Margin="{StaticResource PagePadding}">
+            <Grid x:Name="EditorFormGrid" Margin="{StaticResource PagePadding}">
+                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="24" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="EditorColumnGap" Width="24" />
+                    <ColumnDefinition x:Name="EditorSecondaryColumn" Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <Border Grid.Column="0" Style="{StaticResource PanelBorderStyle}">
@@ -67,56 +69,90 @@
                                    Text="기본 정보"
                                    Style="{StaticResource SectionTitleTextStyle}" />
 
-                        <TextBlock Text="상품명" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBox Tag="ProductName"
-                                 GotKeyboardFocus="OnKoreanInputGotKeyboardFocus"
+                        <TextBlock Text="상품명 *" Style="{StaticResource FieldLabelTextStyle}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox AutomationProperties.Name="상품명" AutomationProperties.HelpText="{Binding ProductNameError}" Tag="ProductName"
+
                                  Text="{Binding ProductName, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                                  Style="{StaticResource PosTextBoxStyle}" />
+                            <Button Grid.Column="1" Margin="8,0,0,0" Content="한글" Command="{Binding ShowKoreanKeyboardCommand}" CommandParameter="ProductName" AutomationProperties.Name="상품명 키보드 열기" Style="{StaticResource SecondaryButtonStyle}" />
+                        </Grid>
                         <TextBlock Text="{Binding ProductNameError}" Style="{StaticResource ErrorTextStyle}" />
 
-                        <TextBlock Margin="0,16,0,8" Text="가격" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBox Tag="Price"
-                                 GotKeyboardFocus="OnNumericInputGotKeyboardFocus"
+                        <TextBlock Margin="0,16,0,8" Text="가격 (원) *" Style="{StaticResource FieldLabelTextStyle}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox AutomationProperties.Name="가격 (원)" AutomationProperties.HelpText="{Binding PriceError}" Tag="Price"
+
                                  InputMethod.IsInputMethodEnabled="False"
                                  Text="{Binding PriceText, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                                  Style="{StaticResource PosTextBoxStyle}" />
+                            <Button Grid.Column="1" Margin="8,0,0,0" Content="숫자" Command="{Binding ShowNumericKeypadCommand}" CommandParameter="Price" AutomationProperties.Name="가격 (원) 키보드 열기" Style="{StaticResource SecondaryButtonStyle}" />
+                        </Grid>
                         <TextBlock Text="{Binding PriceError}" Style="{StaticResource ErrorTextStyle}" />
 
                         <TextBlock Margin="0,16,0,8" Text="바코드" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                        <TextBox AutomationProperties.Name="바코드" Tag="Barcode" AutomationProperties.HelpText="{Binding BarcodeError}"
+                                 Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                                  Style="{StaticResource PosTextBoxStyle}" />
                         <TextBlock Text="{Binding BarcodeError}" Style="{StaticResource ErrorTextStyle}" />
 
                         <TextBlock Margin="0,16,0,8" Text="공급사" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBox Tag="Supplier"
-                                 GotKeyboardFocus="OnKoreanInputGotKeyboardFocus"
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox AutomationProperties.Name="공급사" AutomationProperties.HelpText="{Binding SupplierError}" Tag="Supplier"
+
                                  Text="{Binding Supplier, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource PosTextBoxStyle}" />
+                            <Button Grid.Column="1" Margin="8,0,0,0" Content="한글" Command="{Binding ShowKoreanKeyboardCommand}" CommandParameter="Supplier" AutomationProperties.Name="공급사 키보드 열기" Style="{StaticResource SecondaryButtonStyle}" />
+                        </Grid>
                         <TextBlock Text="{Binding SupplierError}" Style="{StaticResource ErrorTextStyle}" />
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="2" Style="{StaticResource PanelBorderStyle}">
+                <Border x:Name="EditorSecondaryPanel" Grid.Column="2" Style="{StaticResource PanelBorderStyle}">
                     <StackPanel>
                         <TextBlock Margin="0,0,0,20"
                                    Text="분류와 재고"
                                    Style="{StaticResource SectionTitleTextStyle}" />
 
-                        <TextBlock Text="재고" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBox Tag="Stock"
-                                 GotKeyboardFocus="OnNumericInputGotKeyboardFocus"
+                        <TextBlock Text="재고 (비우면 미관리)" Style="{StaticResource FieldLabelTextStyle}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox AutomationProperties.Name="재고" AutomationProperties.HelpText="{Binding StockError}" Tag="Stock"
+
                                  InputMethod.IsInputMethodEnabled="False"
                                  Text="{Binding StockText, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                                  Style="{StaticResource PosTextBoxStyle}" />
+                            <Button Grid.Column="1" Margin="8,0,0,0" Content="숫자" Command="{Binding ShowNumericKeypadCommand}" CommandParameter="Stock" AutomationProperties.Name="재고 키보드 열기" Style="{StaticResource SecondaryButtonStyle}" />
+                        </Grid>
                         <TextBlock Text="{Binding StockError}" Style="{StaticResource ErrorTextStyle}" />
 
                         <TextBlock Margin="0,16,0,8" Text="카테고리" Style="{StaticResource FieldLabelTextStyle}" />
-                        <ComboBox IsEditable="True"
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <ComboBox AutomationProperties.Name="카테고리" Tag="Category" AutomationProperties.HelpText="{Binding CategoryError}" IsEditable="True"
                                   IsTextSearchEnabled="True"
                                   ItemsSource="{Binding Categories}"
                                   SelectedItem="{Binding SelectedCategory}"
-                                  Text="{Binding CategoryText, UpdateSourceTrigger=PropertyChanged}"
+                                  Text="{Binding CategoryText, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                                   Style="{StaticResource PosComboBoxStyle}" />
+                            <Button Grid.Column="1" Margin="8,0,0,0" Content="한글" Command="{Binding ShowKoreanKeyboardCommand}"
+                                    CommandParameter="Category" AutomationProperties.Name="카테고리 키보드 열기" Style="{StaticResource SecondaryButtonStyle}" />
+                        </Grid>
                         <TextBlock Text="{Binding CategoryError}" Style="{StaticResource ErrorTextStyle}" />
 
                         <Border Margin="0,20,0,0"
@@ -133,42 +169,16 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Margin="0,20,0,0"
-                                Padding="16"
-                                Background="{StaticResource BrushWarningTint}"
-                                BorderBrush="{StaticResource BrushWarning}"
-                                BorderThickness="1"
-                                CornerRadius="{StaticResource RadiusControl}"
-                                Visibility="{Binding HasValidationSummary, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Foreground="{StaticResource BrushTextPrimary}"
-                                       Text="{Binding ValidationSummary}"
-                                       TextWrapping="Wrap"
-                                       Style="{StaticResource BodyTextStyle}" />
-                        </Border>
                     </StackPanel>
                 </Border>
             </Grid>
         </ScrollViewer>
 
-        <controls:BottomNavigation Grid.Row="2" />
+        <controls:BottomNavigation Grid.Row="3" />
 
-        <Grid Grid.RowSpan="3"
-              Panel.ZIndex="100"
-              Visibility="{Binding IsInputPanelVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Button Background="Transparent"
-                    BorderBrush="Transparent"
-                    BorderThickness="0"
-                    Command="{Binding DismissInputPanelCommand}"
-                    Cursor="Arrow"
-                    Focusable="False"
-                    Padding="0"
-                    Style="{StaticResource PosButtonBaseStyle}" />
-            <controls:KoreanKeyboard Margin="24"
-                                     VerticalAlignment="Bottom"
-                                     Visibility="{Binding IsKoreanKeyboardVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
-            <controls:NumericKeypad Margin="24"
-                                    VerticalAlignment="Bottom"
-                                    Visibility="{Binding IsNumericKeypadVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
-        </Grid>
+        <StackPanel Grid.Row="2" Visibility="{Binding IsInputPanelVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <controls:KoreanKeyboard Margin="16,0,16,8" Visibility="{Binding IsKoreanKeyboardVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            <controls:NumericKeypad Margin="16,0,16,8" Visibility="{Binding IsNumericKeypadVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+        </StackPanel>
     </Grid>
 </UserControl>

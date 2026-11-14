@@ -8,7 +8,7 @@ using Pos.Infrastructure;
 
 namespace Pos.App.ViewModels;
 
-public sealed class SettingsViewModel : ObservableObject
+public sealed class SettingsViewModel : InputValidationViewModel
 {
     private readonly string _settingsPath;
     private readonly JsonSettingsService _settingsService;
@@ -30,6 +30,10 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _isStartFullscreen = true;
     private bool _isRunAtStartup;
     private string _selectedOutOfStockPolicy = "품절 시 차단";
+    private bool _validateOnChange;
+    private bool _isLoading;
+    private AppSettings? _appliedSettings;
+    private SettingsFormState? _savedState;
 
     public SettingsViewModel(
         string settingsPath,
@@ -52,6 +56,16 @@ public sealed class SettingsViewModel : ObservableObject
         BackupNowCommand = new AsyncRelayCommand(BackupNowAsync);
         OpenBackupFolderCommand = new RelayCommand(OpenBackupFolder);
         ValidateBackupCommand = new AsyncRelayCommand(ValidateBackupAsync);
+        PropertyChanged += (sender, args) =>
+        {
+            if (!_isLoading && IsEditableProperty(args.PropertyName))
+            {
+                OnPropertyChanged(nameof(HasUnsavedChanges));
+                SettingsStatusText = HasUnsavedChanges ? "수정 중 · 설정 저장을 눌러 적용하세요." : "저장된 설정을 사용 중입니다.";
+            }
+            if (_validateOnChange && args.PropertyName is nameof(BackupTimeText) or nameof(BackupRetentionCountText) or nameof(ScannerInputThresholdText))
+                TryBuildSettings(out _, out _);
+        };
     }
 
     public IReadOnlyList<string> ScannerTerminatorOptions { get; } = ["Enter", "Tab"];
@@ -60,6 +74,9 @@ public sealed class SettingsViewModel : ObservableObject
     public IReadOnlyList<string> OutOfStockPolicyOptions { get; } = ["품절 시 차단", "경고 후 허용", "그냥 허용"];
 
     public Func<AppSettings, Task>? SettingsSaved { get; set; }
+    public Func<AppSettings, bool>? CanApplySettings { get; set; }
+    public Func<Task>? DatabaseReloadRequested { get; set; }
+    public bool HasUnsavedChanges => _savedState is not null && _savedState != CaptureState();
 
     public string SettingsStatusText { get => _settingsStatusText; private set => SetProperty(ref _settingsStatusText, value); }
     public string DatabasePath { get => _databasePath; private set => SetProperty(ref _databasePath, value); }
@@ -76,6 +93,9 @@ public sealed class SettingsViewModel : ObservableObject
     public bool IsStartFullscreen { get => _isStartFullscreen; set => SetProperty(ref _isStartFullscreen, value); }
     public bool IsRunAtStartup { get => _isRunAtStartup; set => SetProperty(ref _isRunAtStartup, value); }
     public string SelectedOutOfStockPolicy { get => _selectedOutOfStockPolicy; set => SetProperty(ref _selectedOutOfStockPolicy, value); }
+    public string BackupTimeError => GetError(nameof(BackupTimeText));
+    public string BackupRetentionError => GetError(nameof(BackupRetentionCountText));
+    public string ScannerInputError => GetError(nameof(ScannerInputThresholdText));
 
     public ICommand SaveSettingsCommand { get; }
     public ICommand SelectDatabaseCommand { get; }
@@ -88,6 +108,9 @@ public sealed class SettingsViewModel : ObservableObject
 
     public void Load(AppSettings settings, string defaultDatabasePath, string defaultBackupPath)
     {
+        _isLoading = true;
+        _validateOnChange = false;
+        SetValidationErrors(new Dictionary<string, string>());
         DatabasePath = string.IsNullOrWhiteSpace(settings.DatabasePath) ? defaultDatabasePath : settings.DatabasePath;
         BackupFolderPath = string.IsNullOrWhiteSpace(settings.BackupDirectory) ? defaultBackupPath : settings.BackupDirectory;
         SelectedBackupFrequency = IntervalToLabel(settings.BackupIntervalDays);
@@ -100,26 +123,58 @@ public sealed class SettingsViewModel : ObservableObject
         IsStartFullscreen = settings.StartFullScreen;
         IsRunAtStartup = settings.RunAtStartup;
         SelectedOutOfStockPolicy = PolicyToLabel(settings.OutOfStockPolicy);
-        SettingsStatusText = "설정을 확인하세요.";
+        _appliedSettings = settings with { DatabasePath = DatabasePath, BackupDirectory = BackupFolderPath };
+        _savedState = CaptureState();
+        _isLoading = false;
+        OnPropertyChanged(nameof(HasUnsavedChanges));
+        SettingsStatusText = "저장된 설정을 사용 중입니다.";
+        DatabaseStatusText = "파일을 바꾸면 설정 저장 후 연결됩니다.";
     }
+
+    public bool ConfirmDiscardChanges()
+    {
+        if (!HasUnsavedChanges) return true;
+        if (!_dialogs.Confirm("저장하지 않은 설정이 있습니다. 변경 내용을 버리고 이동할까요?", "설정 변경 확인")) return false;
+        _savedState = CaptureState();
+        OnPropertyChanged(nameof(HasUnsavedChanges));
+        return true;
+    }
+
+    private SettingsFormState CaptureState() => new(DatabasePath, BackupFolderPath, SelectedBackupFrequency, BackupTimeText,
+        BackupRetentionCountText, SelectedScannerTerminator, ScannerInputThresholdText, IsScanSoundEnabled, SelectedTheme,
+        IsStartFullscreen, IsRunAtStartup, SelectedOutOfStockPolicy);
+
+    private static bool IsEditableProperty(string? name) => name is nameof(DatabasePath) or nameof(BackupFolderPath)
+        or nameof(SelectedBackupFrequency) or nameof(BackupTimeText) or nameof(BackupRetentionCountText)
+        or nameof(SelectedScannerTerminator) or nameof(ScannerInputThresholdText) or nameof(IsScanSoundEnabled)
+        or nameof(SelectedTheme) or nameof(IsStartFullscreen) or nameof(IsRunAtStartup) or nameof(SelectedOutOfStockPolicy);
+
+    private sealed record SettingsFormState(string Database, string Backup, string Frequency, string Time, string Retention,
+        string Terminator, string Threshold, bool Sound, string Theme, bool Fullscreen, bool Startup, string StockPolicy);
 
     private async Task SaveAsync()
     {
         if (!TryBuildSettings(out var settings, out var error))
         {
-            _dialogs.Error(error, "설정 확인");
+            SettingsStatusText = error;
+            FocusFirstError();
             return;
         }
 
         try
         {
+            if (CanApplySettings?.Invoke(settings) == false) return;
             SettingsStatusText = "저장 중";
             await EnsureDatabaseAsync(migrateLegacy: true);
             settings = settings with { DatabasePath = DatabasePath };
+            if (CanApplySettings?.Invoke(settings) == false) return;
             await _settingsService.SaveAsync(_settingsPath, settings);
             _startupService.SetRegistered(settings.RunAtStartup, Environment.ProcessPath
                 ?? throw new InvalidOperationException("실행 파일 경로를 확인할 수 없습니다."));
-            SettingsStatusText = "저장됨";
+            _appliedSettings = settings;
+            _savedState = CaptureState();
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+            SettingsStatusText = "설정을 저장하고 적용했습니다.";
             if (SettingsSaved is not null)
             {
                 await SettingsSaved(settings);
@@ -166,20 +221,14 @@ public sealed class SettingsViewModel : ObservableObject
 
     private async Task ReloadDatabaseAsync()
     {
-        if (!TryBuildSettings(out var settings, out var error))
-        {
-            _dialogs.Error(error, "설정 확인");
-            return;
-        }
-
         try
         {
-            await EnsureDatabaseAsync(migrateLegacy: false);
-            DatabaseStatusText = "다시 불러옴";
-            if (SettingsSaved is not null)
-            {
-                await SettingsSaved(settings with { DatabasePath = DatabasePath });
-            }
+            var path = _appliedSettings?.DatabasePath;
+            if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("먼저 데이터베이스를 선택하고 설정을 저장하세요.");
+            var count = (await new ExcelPosRepository(path).GetProductsAsync()).Count;
+            if (DatabaseReloadRequested is not null) await DatabaseReloadRequested();
+            DatabaseStatusText = $"사용 중인 DB를 다시 불러왔습니다 · 상품 {count:N0}개";
+            SettingsStatusText = HasUnsavedChanges ? "수정 중 · DB만 새로 고쳤습니다. 설정 변경은 아직 적용되지 않았습니다." : "사용 중인 상품 데이터를 새로 고쳤습니다.";
         }
         catch (Exception exception)
         {
@@ -204,7 +253,8 @@ public sealed class SettingsViewModel : ObservableObject
     {
         if (!int.TryParse(BackupRetentionCountText, out var retention) || retention < 1)
         {
-            _dialogs.Error("백업 보존 개수는 1 이상의 정수여야 합니다.", "백업 설정 확인");
+            TryBuildSettings(out _, out _);
+            FocusField(nameof(BackupRetentionCountText));
             return;
         }
 
@@ -292,23 +342,28 @@ public sealed class SettingsViewModel : ObservableObject
 
     private bool TryBuildSettings(out AppSettings settings, out string error)
     {
+        _validateOnChange = true;
         settings = new AppSettings();
         error = string.Empty;
+        var errors = new Dictionary<string, string>();
         if (!TimeOnly.TryParseExact(BackupTimeText, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var backupTime))
         {
-            error = "백업 실행 시각을 HH:mm 형식으로 입력하세요.";
-            return false;
+            errors[nameof(BackupTimeText)] = "백업 실행 시각을 HH:mm 형식으로 입력하세요. 예: 03:00";
         }
 
         if (!int.TryParse(BackupRetentionCountText, out var retention) || retention < 1)
         {
-            error = "백업 보존 개수는 1 이상의 정수여야 합니다.";
-            return false;
+            errors[nameof(BackupRetentionCountText)] = "백업 보존 개수는 1 이상의 정수여야 합니다.";
         }
 
         if (!int.TryParse(ScannerInputThresholdText, out var threshold) || threshold < 1)
         {
-            error = "스캐너 최대 입력 간격은 1 이상의 정수여야 합니다.";
+            errors[nameof(ScannerInputThresholdText)] = "스캐너 최대 입력 간격은 1 이상의 정수여야 합니다.";
+        }
+        SetValidationErrors(errors);
+        if (HasErrors)
+        {
+            error = $"입력 오류 {ErrorCount}개를 확인하세요.";
             return false;
         }
 
@@ -330,6 +385,16 @@ public sealed class SettingsViewModel : ObservableObject
             OutOfStockPolicy = LabelToPolicy(SelectedOutOfStockPolicy),
         };
         return true;
+    }
+
+    protected override void OnValidationChanged()
+    {
+        base.OnValidationChanged();
+        OnPropertyChanged(nameof(BackupTimeError));
+        OnPropertyChanged(nameof(BackupRetentionError));
+        OnPropertyChanged(nameof(ScannerInputError));
+        SettingsStatusText = HasErrors ? $"입력 오류 {ErrorCount}개를 확인하세요."
+            : HasUnsavedChanges ? "수정 중 · 설정 저장을 눌러 적용하세요." : "저장된 설정을 사용 중입니다.";
     }
 
     private static int LabelToInterval(string label) => label switch

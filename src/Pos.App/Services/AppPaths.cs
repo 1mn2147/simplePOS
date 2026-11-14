@@ -2,9 +2,9 @@ namespace Pos.App.Services;
 
 public sealed class AppPaths
 {
-    public AppPaths()
+    public AppPaths(string? rootDirectory = null)
     {
-        var overrideRoot = Environment.GetEnvironmentVariable("SIMPLEPOS_HOME");
+        var overrideRoot = rootDirectory ?? Environment.GetEnvironmentVariable("SIMPLEPOS_HOME");
         RootDirectory = string.IsNullOrWhiteSpace(overrideRoot)
             ? Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

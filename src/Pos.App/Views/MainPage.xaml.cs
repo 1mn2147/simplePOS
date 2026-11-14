@@ -1,58 +1,61 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
+using Pos.App.ViewModels;
 
 namespace Pos.App.Views;
 
 public partial class MainPage : UserControl
 {
-    private const double HorizontalWorkspaceBreakpoint = 1200;
-
     public MainPage()
     {
         InitializeComponent();
-        Loaded += (_, _) => ApplyResponsiveLayout(ActualWidth);
+        Loaded += (_, _) =>
+        {
+            ObserveMainPage(DataContext as MainPageViewModel);
+            ApplyResponsiveLayout(ActualWidth);
+        };
+        Unloaded += (_, _) => ObserveMainPage(null);
+        DataContextChanged += (_, _) =>
+        {
+            if (IsLoaded) ObserveMainPage(DataContext as MainPageViewModel);
+        };
     }
 
-    private void OnMainPageSizeChanged(object sender, SizeChangedEventArgs e)
+    private MainPageViewModel? _observedMainPage;
+
+    private void ObserveMainPage(MainPageViewModel? main)
     {
-        ApplyResponsiveLayout(e.NewSize.Width);
+        if (_observedMainPage is not null) _observedMainPage.PropertyChanged -= OnMainPagePropertyChanged;
+        _observedMainPage = main;
+        if (main is not null) main.PropertyChanged += OnMainPagePropertyChanged;
     }
+
+    private void OnMainPagePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is not (nameof(MainPageViewModel.RecentProductId) or nameof(MainPageViewModel.RecentProductQuantity))) return;
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+        {
+            if (!IsLoaded || _observedMainPage is null) return;
+            var recent = _observedMainPage.CartItems.FirstOrDefault(item => item.IsRecentlyAdded);
+            if (recent is not null) CartList.ScrollIntoView(recent);
+        });
+    }
+
+    private void OnMainPageSizeChanged(object sender, SizeChangedEventArgs e) => ApplyResponsiveLayout(e.NewSize.Width);
 
     private void ApplyResponsiveLayout(double width)
     {
-        var useHorizontalLayout = width >= HorizontalWorkspaceBreakpoint;
-
-        WorkspacePrimaryRow.Height = useHorizontalLayout
-            ? new GridLength(1, GridUnitType.Star)
-            : new GridLength(3, GridUnitType.Star);
-        WorkspaceSecondaryRow.Height = useHorizontalLayout
-            ? new GridLength(0)
-            : new GridLength(2, GridUnitType.Star);
-
-        WorkspacePrimaryColumn.Width = useHorizontalLayout
-            ? new GridLength(3, GridUnitType.Star)
-            : new GridLength(1, GridUnitType.Star);
-        WorkspaceSecondaryColumn.Width = useHorizontalLayout
-            ? new GridLength(2, GridUnitType.Star)
-            : new GridLength(0);
-
-        Grid.SetRow(CartPanel, 0);
-        Grid.SetColumn(CartPanel, 0);
-        Grid.SetRow(QuickAddPanel, useHorizontalLayout ? 0 : 1);
-        Grid.SetColumn(QuickAddPanel, useHorizontalLayout ? 1 : 0);
-
-        CartPanel.Margin = useHorizontalLayout
-            ? new Thickness(0, 0, 8, 0)
-            : new Thickness(0, 0, 0, 8);
-        QuickAddPanel.Margin = useHorizontalLayout
-            ? new Thickness(8, 0, 0, 0)
-            : new Thickness(0, 8, 0, 0);
-
-        DesktopCheckoutPanel.Visibility = useHorizontalLayout
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-        CompactCheckoutPanel.Visibility = useHorizontalLayout
-            ? Visibility.Collapsed
-            : Visibility.Visible;
+        var wide = width >= 1200;
+        WorkspacePrimaryRow.Height = new GridLength(1, GridUnitType.Star);
+        WorkspaceSecondaryRow.Height = new GridLength(0);
+        WorkspacePrimaryColumn.Width = new GridLength(wide ? 3 : 2.1, GridUnitType.Star);
+        WorkspaceSecondaryColumn.Width = new GridLength(wide ? 2 : 1, GridUnitType.Star);
+        Grid.SetRow(QuickAddPanel, 0);
+        Grid.SetColumn(QuickAddPanel, 1);
+        if (DataContext is MainPageViewModel main) main.QuickAddColumns = wide ? 4 : width >= 1050 ? 3 : 2;
+        DesktopCheckoutPanel.Visibility = wide ? Visibility.Visible : Visibility.Collapsed;
+        CompactCheckoutPanel.Visibility = wide ? Visibility.Collapsed : Visibility.Visible;
     }
 }
