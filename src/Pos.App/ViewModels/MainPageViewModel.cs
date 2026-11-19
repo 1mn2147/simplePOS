@@ -56,7 +56,7 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
 
         IncreaseQuantityCommand = new RelayCommand<CartItemViewModel>(item => ChangeQuantity(item, 1));
         DecreaseQuantityCommand = new RelayCommand<CartItemViewModel>(item => ChangeQuantity(item, -1));
-        RemoveCartItemCommand = new RelayCommand<CartItemViewModel>(RemoveItem);
+        RemoveCartItemCommand = new RelayCommand<CartItemViewModel>(RemoveItem, item => item is not null && !IsSavingSale);
         EditCartItemCommand = new AsyncRelayCommand<CartItemViewModel>(EditItemAsync);
         AddQuickItemCommand = new RelayCommand<QuickAddItemViewModel>(item => AddProduct(item?.Product));
         AddQuickProductCommand = new AsyncRelayCommand(
@@ -138,7 +138,7 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
 
     public ICommand IncreaseQuantityCommand { get; }
     public ICommand DecreaseQuantityCommand { get; }
-    public ICommand RemoveCartItemCommand { get; }
+    public RelayCommand<CartItemViewModel> RemoveCartItemCommand { get; }
     public ICommand EditCartItemCommand { get; }
     public ICommand AddQuickItemCommand { get; }
     public ICommand AddQuickProductCommand { get; }
@@ -408,6 +408,7 @@ public sealed class MainPageViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsCartEmpty));
         OnPropertyChanged(nameof(CanUndoCart));
         UndoCartCommand.NotifyCanExecuteChanged();
+        RemoveCartItemCommand.NotifyCanExecuteChanged();
         ClearCartCommand.NotifyCanExecuteChanged();
         CompleteSaleCommand.NotifyCanExecuteChanged();
     }

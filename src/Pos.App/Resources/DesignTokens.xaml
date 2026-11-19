@@ -68,7 +68,8 @@
     <SolidColorBrush x:Key="BrushSuccessTint" Color="#ECFDF5" />
     <SolidColorBrush x:Key="BrushWarningTint" Color="#FFFBEB" />
     <SolidColorBrush x:Key="BrushErrorTint" Color="#FEF2F2" />
-    <SolidColorBrush x:Key="BrushErrorPressed" Color="#FEE2E2" />
+    <SolidColorBrush x:Key="BrushErrorHover" Color="#991B1B" />
+    <SolidColorBrush x:Key="BrushErrorPressed" Color="#7F1D1D" />
 
     <!-- Local Korean-capable fallbacks keep rendering deterministic offline. -->
     <FontFamily x:Key="FontDisplay">Malgun Gothic, Segoe UI</FontFamily>

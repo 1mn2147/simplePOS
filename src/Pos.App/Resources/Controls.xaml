@@ -164,15 +164,20 @@
     </Style>
 
     <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource PosButtonBaseStyle}">
-        <Setter Property="Background" Value="{StaticResource BrushSurface}" />
+        <Setter Property="Background" Value="{StaticResource BrushError}" />
         <Setter Property="BorderBrush" Value="{StaticResource BrushError}" />
-        <Setter Property="Foreground" Value="{StaticResource BrushError}" />
+        <Setter Property="Foreground" Value="{StaticResource BrushOnPrimary}" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{StaticResource BrushErrorTint}" />
+                <Setter Property="Background" Value="{StaticResource BrushErrorHover}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
                 <Setter Property="Background" Value="{StaticResource BrushErrorPressed}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="{StaticResource BrushSurfaceMuted}" />
+                <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+                <Setter Property="Foreground" Value="{StaticResource BrushTextSecondary}" />
             </Trigger>
         </Style.Triggers>
     </Style>

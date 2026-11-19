@@ -276,7 +276,7 @@
                                             </Button>
                                             <Button Margin="2" Padding="8,0" Command="{Binding DataContext.RemoveCartItemCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
                                                     CommandParameter="{Binding}" AutomationProperties.Name="{Binding Name, StringFormat={}{0} 장바구니에서 제거}"
-                                                    ToolTip="장바구니에서 제거" Style="{StaticResource GhostButtonStyle}">
+                                                    ToolTip="장바구니에서 제거" Style="{StaticResource DangerButtonStyle}">
                                                 <TextBlock FontFamily="Segoe Fluent Icons" FontSize="18" Text="&#xE74D;" />
                                             </Button>
                                         </StackPanel>

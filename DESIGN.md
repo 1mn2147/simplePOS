@@ -35,7 +35,8 @@ colors:
   warning-tint: "#FFFBEB"
   error: "#B91C1C"
   error-tint: "#FEF2F2"
-  error-pressed: "#FEE2E2"
+  error-hover: "#991B1B"
+  error-pressed: "#7F1D1D"
   on-primary: "#FFFFFF"
 typography:
   page-title:
@@ -102,8 +103,8 @@ components:
     rounded: "{rounded.control}"
     height: "48px"
   button-danger:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.error}"
+    backgroundColor: "{colors.error}"
+    textColor: "{colors.on-primary}"
     rounded: "{rounded.control}"
     height: "48px"
   input:
