@@ -12,7 +12,7 @@ Get-FileHash .\SimplePOS-1.1.1-win-x64.exe -Algorithm SHA256
 
 현재 실행 파일은 코드 서명되지 않아 Windows SmartScreen에서 알 수 없는 게시자 경고가 표시될 수 있다.
 
-## 현재 구현
+## Windows 버전 기능
 
 - 바코드 스캔, 미등록 바코드 상품 추가 연결, 4열 빠른 추가
 - 장바구니 수량 조절, 상품 수정/제거, 비우기, 판매 완료
@@ -38,6 +38,20 @@ Get-FileHash .\SimplePOS-1.1.1-win-x64.exe -Algorithm SHA256
 ## 실행
 
 개발 빌드의 게시 파일은 `artifacts/publish/win-x64/SimplePOS.exe`다. 첫 실행 시 `%LocalAppData%\SimplePOS` 아래에 설정, 기본 Excel DB, 로그를 만든다. 기존 Excel은 설정 화면의 `파일 선택`으로 지정하며, 구형 3열 파일은 원본을 유지한 채 `_pos.xlsx` 복사본으로 변환한다.
+
+### macOS 판매 화면 (개발 버전)
+
+저장소 루트에서 .NET SDK로 실행한다. 등록된 상품을 판매하려면 Windows 버전에서 만든 SimplePOS 통합 문서의 복사본 경로를 전달한다.
+
+```sh
+dotnet run --project src/Pos.Desktop -- "/path/to/products.xlsx"
+```
+
+바코드를 입력하고 Enter를 누르거나 빠른 추가 상품을 선택한 뒤, 장바구니에서 수량과 금액을 확인하고 판매를 확정한다. 같은 파일로 다시 실행하면 변경된 재고를 읽는다. 판매 기록은 해당 파일의 `Sales`와 `SaleItems` 시트에 저장된다.
+
+DB 인수를 생략하면 `settings.json`의 `databasePath`를 사용한다. 설정 경로도 없으면 기본 데이터 디렉터리에 빈 `data/products.xlsx`를 만든다. 개발 데이터를 분리하려면 실행 전에 `SIMPLEPOS_HOME`에 별도의 디렉터리를 지정한다. 상품 등록과 설정 화면은 후속 포팅 단계에 포함된다.
+
+판매 화면 자동 테스트는 `dotnet test tests/Pos.Desktop.Tests -c Release`로 실행한다.
 
 ## 개발
 

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.23" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.23" />
+    <ProjectReference Include="../Pos.Infrastructure/Pos.Infrastructure.csproj" />
+    <ProjectReference Include="../Pos.Core/Pos.Core.csproj" />
+    <Compile Include="../Pos.App/Services/AppPaths.cs" Link="Services/AppPaths.cs" />
+  </ItemGroup>
+</Project>
