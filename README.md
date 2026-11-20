@@ -53,6 +53,8 @@ macOS 패키지는 Apple Silicon용이며 번들의 최소 버전은 macOS 15.0�
 shasum -a 256 -c SimplePOS-1.1.1-osx-arm64.zip.sha256
 ```
 
+로컬 설치 테스트용 DMG를 만들려면 앱 빌드 후 저장소 루트에서 `./scripts/create-macos-dmg.sh`를 실행한다. 같은 출력 폴더에 `SimplePOS-1.1.1-osx-arm64.dmg`와 `.dmg.sha256` 파일이 생성된다. DMG를 열고 `SimplePOS.app`을 옆의 `Applications` 폴더로 드래그한 뒤 응용 프로그램에서 실행한다. DMG 자체는 서명과 공증 없이 생성된다.
+
 기본 빌드는 로컬 테스트용 임시 서명(ad hoc)을 사용한다. 외부 배포용 ZIP을 만들 때는 빌드 Mac의 키체인에 Developer ID Application 인증서와 개인 키, `notarytool` 프로필을 준비한 뒤 실제 이름을 인수로 전달한다. 이 명령은 Apple 공증 서비스에 ZIP을 제출하고, 승인된 티켓을 앱에 첨부한 뒤 배포용 ZIP과 체크섬을 생성한다.
 
 ```sh
