@@ -1,8 +1,8 @@
 # Simple POS
 
-Windows x64용 경량 POS 앱이다. 상품과 판매 데이터는 Excel `.xlsx`에 저장하며 Excel이나 .NET을 별도로 설치하지 않아도 동작한다.
+Windows x64와 Apple Silicon Mac에서 실행하는 경량 POS 앱이다. 상품과 판매 데이터는 Excel `.xlsx`에 저장하며 Excel이나 .NET을 별도로 설치하지 않아도 동작한다.
 
-## 다운로드
+## Windows 다운로드
 
 [Simple POS v1.1.1](https://github.com/1mn2147/simplePOS/releases/tag/v1.1.1)에서 `SimplePOS-1.1.1-win-x64.exe`와 SHA-256 체크섬 파일을 내려받을 수 있다.
 
@@ -39,9 +39,28 @@ Get-FileHash .\SimplePOS-1.1.1-win-x64.exe -Algorithm SHA256
 
 개발 빌드의 게시 파일은 `artifacts/publish/win-x64/SimplePOS.exe`다. 첫 실행 시 `%LocalAppData%\SimplePOS` 아래에 설정, 기본 Excel DB, 로그를 만든다. 기존 Excel은 설정 화면의 `파일 선택`으로 지정하며, 구형 3열 파일은 원본을 유지한 채 `_pos.xlsx` 복사본으로 변환한다.
 
-### macOS 개발 버전
+### macOS 실행 및 패키징
 
-저장소 루트에서 .NET SDK로 실행한다.
+macOS 패키지는 Apple Silicon용이며 번들의 최소 버전은 macOS 15.0이다. 로컬 실행용 앱을 만들려면 저장소 루트에서 다음 스크립트를 실행한다. 빌드에는 `global.json`에 지정한 .NET SDK와 Apple Command Line Tools가 필요하다.
+
+```sh
+./scripts/publish-macos.sh
+```
+
+결과는 `artifacts/publish/osx-arm64/`에 생성된다. `SimplePOS.app`을 열면 판매 화면이 표시된다. 다른 폴더로 옮길 때는 앱 번들 전체를 복사하거나 ZIP을 풀어서 실행한다. 앱에는 .NET 런타임이 포함된다. 앱 버전 1.1.1의 ZIP은 출력 폴더에서 다음 명령으로 확인한다.
+
+```sh
+shasum -a 256 -c SimplePOS-1.1.1-osx-arm64.zip.sha256
+```
+
+기본 빌드는 로컬 테스트용 임시 서명(ad hoc)을 사용한다. 외부 배포용 ZIP을 만들 때는 빌드 Mac의 키체인에 Developer ID Application 인증서와 개인 키, `notarytool` 프로필을 준비한 뒤 실제 이름을 인수로 전달한다. 이 명령은 Apple 공증 서비스에 ZIP을 제출하고, 승인된 티켓을 앱에 첨부한 뒤 배포용 ZIP과 체크섬을 생성한다.
+
+```sh
+./scripts/publish-macos.sh --identity "Developer ID Application: Example (TEAMID)" \
+  --notary-profile "simplepos-notary"
+```
+
+개발 중에는 저장소 루트에서 .NET SDK로 실행할 수 있다.
 
 ```sh
 dotnet run --project src/Pos.Desktop

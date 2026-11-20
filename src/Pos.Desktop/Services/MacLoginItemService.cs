@@ -15,13 +15,13 @@ public sealed record MacLaunchCommand(
 
         if (string.Equals(Path.GetFileNameWithoutExtension(processPath), "dotnet", StringComparison.OrdinalIgnoreCase))
         {
-            var entryAssembly = System.Reflection.Assembly.GetEntryAssembly()?.Location;
-            if (string.IsNullOrWhiteSpace(entryAssembly))
+            var entryAssembly = Environment.GetCommandLineArgs().FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(entryAssembly) || !File.Exists(entryAssembly))
             {
                 throw new InvalidOperationException("개발 실행에 사용할 애플리케이션 어셈블리를 확인할 수 없습니다.");
             }
 
-            return new MacLaunchCommand(processPath, [entryAssembly, .. arguments], ReadEnvironment());
+            return new MacLaunchCommand(processPath, [Path.GetFullPath(entryAssembly), .. arguments], ReadEnvironment());
         }
 
         return new MacLaunchCommand(processPath, arguments, ReadEnvironment());
