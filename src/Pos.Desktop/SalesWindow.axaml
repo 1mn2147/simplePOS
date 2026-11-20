@@ -1,0 +1,201 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Pos.Desktop.SalesWindow"
+        Title="Simple POS"
+        Width="1180"
+        Height="760"
+        MinWidth="900"
+        MinHeight="600"
+        Background="#EFEFF4"
+        FontFamily="Apple SD Gothic Neo, Malgun Gothic, sans-serif"
+        Closing="OnWindowClosing">
+  <Window.Styles>
+    <Style Selector="Button">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="Padding" Value="16,8" />
+      <Setter Property="FontSize" Value="15" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#006DFF" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.danger">
+      <Setter Property="Foreground" Value="#B91C1C" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="#6B6B6B" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="64,Auto,*" Margin="0">
+    <Border Grid.Row="0" Background="#1A283E" Padding="24,0">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+          <Border Width="18" Height="24" Background="#F4D35E" CornerRadius="2" />
+          <TextBlock Text="Simple POS" Foreground="White" FontSize="21" FontWeight="Bold" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+          <TextBlock x:Name="BackupStatusText"
+                     VerticalAlignment="Center"
+                     Foreground="#B9C3D2"
+                     Text="백업 대기" />
+          <TextBlock x:Name="DatabaseStatusText"
+                     VerticalAlignment="Center"
+                     Foreground="#B9C3D2"
+                     Text="상품 데이터 연결 중" />
+          <Button x:Name="ProductManagementButton"
+                  AutomationProperties.Name="상품 찾기 및 관리"
+                  Background="#EEF4FF" Foreground="#102D55"
+                  Content="상품 관리"
+                  Click="OnProductManagementClick" />
+          <Button x:Name="SettingsButton"
+                  AutomationProperties.Name="설정"
+                  Background="#EEF4FF" Foreground="#102D55"
+                  Content="설정"
+                  Click="OnSettingsClick" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1" Margin="20,16,20,0" Padding="16" Background="White" CornerRadius="8">
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+        <TextBlock VerticalAlignment="Center" Text="바코드" FontWeight="SemiBold" />
+        <TextBox Grid.Column="1"
+                 x:Name="BarcodeInput"
+                 AutomationProperties.Name="바코드 입력"
+                 Watermark="바코드를 스캔하거나 입력하세요"
+                 FontSize="18"
+                 MinHeight="48" />
+        <Button Grid.Column="2"
+                x:Name="AddBarcodeButton"
+                AutomationProperties.Name="바코드 상품 담기"
+                Classes="primary"
+                Content="상품 담기"
+                Click="OnAddBarcodeClick" />
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="2" Margin="20" ColumnDefinitions="3*,2*" ColumnSpacing="16">
+      <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="20">
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <TextBlock Text="장바구니" FontSize="24" FontWeight="Bold" />
+              <TextBlock x:Name="TotalItemCountText"
+                         AutomationProperties.Name="장바구니 상품 수"
+                         Classes="muted"
+                         VerticalAlignment="Center"
+                         Text="0개" />
+            </StackPanel>
+            <Button Grid.Column="1"
+                    x:Name="UndoCartButton"
+                    AutomationProperties.Name="장바구니 되돌리기"
+                    Content="되돌리기"
+                    Click="OnUndoCartClick" />
+            <Button Grid.Column="2"
+                    x:Name="ClearCartButton"
+                    AutomationProperties.Name="장바구니 비우기"
+                    Classes="danger"
+                    Content="비우기"
+                    Click="OnClearCartClick" />
+          </Grid>
+
+          <Border Grid.Row="1" Margin="0,14,0,8" Padding="12,8" Background="#F8FAFC" CornerRadius="6">
+            <TextBlock x:Name="StatusMessage"
+                       AutomationProperties.Name="판매 상태 안내"
+                       Classes="muted"
+                       Text="바코드를 스캔하거나 빠른 추가 상품을 선택하세요."
+                       TextWrapping="Wrap" />
+          </Border>
+
+          <Grid Grid.Row="2">
+            <TextBlock x:Name="EmptyCartMessage"
+                       AutomationProperties.Name="빈 장바구니 안내"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Classes="muted"
+                       Text="장바구니가 비어 있습니다." />
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <StackPanel x:Name="CartItemsPanel"
+                          AutomationProperties.Name="장바구니 상품 목록"
+                          Spacing="8" />
+            </ScrollViewer>
+          </Grid>
+
+          <Grid Grid.Row="3" Margin="0,16,0,0" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+            <TextBlock Classes="muted" Text="결제 금액" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1"
+                       x:Name="TotalAmountText"
+                       AutomationProperties.Name="결제 총액"
+                       Text="0원"
+                       FontSize="30"
+                       FontWeight="Bold" />
+            <Button Grid.Row="1"
+                    Grid.ColumnSpan="2"
+                    x:Name="CompleteSaleButton"
+                    AutomationProperties.Name="판매 완료"
+                    Classes="primary"
+                    Margin="0,12,0,0"
+                    MinHeight="56"
+                    Content="판매 완료"
+                    Click="OnCompleteSaleClick" />
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="20">
+        <Grid RowDefinitions="Auto,Auto,*">
+          <TextBlock Text="빠른 추가" FontSize="24" FontWeight="Bold" />
+          <TextBlock Grid.Row="1"
+                     Margin="0,6,0,14"
+                     Classes="muted"
+                     Text="자주 판매하는 상품을 한 번에 담습니다."
+                     TextWrapping="Wrap" />
+          <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <WrapPanel x:Name="QuickAddPanel"
+                       AutomationProperties.Name="빠른 추가 상품 목록"
+                       Orientation="Horizontal" />
+          </ScrollViewer>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <Border Grid.RowSpan="3"
+            x:Name="SaleConfirmationPanel"
+            AutomationProperties.Name="판매 확인 패널"
+            IsVisible="False"
+            Background="#99000000"
+            ZIndex="10">
+      <Border Width="420"
+              Padding="28"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Background="White"
+              CornerRadius="8">
+        <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="16">
+          <TextBlock Text="판매를 완료할까요?" FontSize="22" FontWeight="Bold" />
+          <StackPanel Grid.Row="1" Spacing="8">
+            <TextBlock x:Name="ConfirmationSummary" FontSize="16" />
+            <TextBlock Classes="muted"
+                       Text="완료하면 판매 이력과 재고가 Excel DB에 저장됩니다."
+                       TextWrapping="Wrap" />
+          </StackPanel>
+          <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button x:Name="CancelSaleButton"
+                    AutomationProperties.Name="판매 취소"
+                    MinWidth="90"
+                    Content="취소"
+                    Click="OnCancelSaleClick" />
+            <Button x:Name="ConfirmSaleButton"
+                    AutomationProperties.Name="판매 저장 확정"
+                    Classes="primary"
+                    MinWidth="110"
+                    Content="판매 완료"
+                    Click="OnConfirmSaleClick" />
+          </StackPanel>
+        </Grid>
+      </Border>
+    </Border>
+  </Grid>
+</Window>

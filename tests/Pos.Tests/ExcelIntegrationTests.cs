@@ -50,6 +50,75 @@ public sealed class ExcelIntegrationTests : IDisposable
     }
 
     [Fact]
+    public async Task MigratedCatalog_SaleSurvivesBackupAndReopen()
+    {
+        Directory.CreateDirectory(_temporaryDirectory);
+        var source = Path.Combine(_temporaryDirectory, "상품 목록.xlsx");
+        using (var workbook = new XLWorkbook())
+        {
+            var sheet = workbook.AddWorksheet("상품");
+            sheet.Cell("A1").Value = "상품명";
+            sheet.Cell("B1").Value = "가격";
+            sheet.Cell("C1").Value = "바코드";
+            sheet.Cell("A2").Value = "보리차";
+            sheet.Cell("B2").Value = 1500;
+            sheet.Cell("C2").Value = "0001234567890";
+            workbook.SaveAs(source);
+        }
+
+        var originalHash = await HashAsync(source);
+        var database = Path.Combine(_temporaryDirectory, "판매 DB.xlsx");
+        await ExcelPosRepository.MigrateLegacyAsync(source, database);
+        var repository = new ExcelPosRepository(database);
+        var product = Assert.Single(await repository.GetProductsAsync()) with { Stock = 3 };
+        Assert.Equal("0001234567890", product.Barcode);
+        await repository.SaveProductAsync(product);
+        var cart = new CartService();
+        Assert.True(cart.Add(product, quantity: 2).Succeeded);
+        var sale = await new SaleService(repository).CompleteSaleAsync(cart);
+
+        var backup = await new BackupService().CreateAsync(
+            database, Path.Combine(_temporaryDirectory, "백업"), retentionCount: 3);
+        Assert.Equal(originalHash, await HashAsync(source));
+        Assert.Equal(await HashAsync(database), await HashAsync(backup.Path));
+        var restored = Assert.Single(await new ExcelPosRepository(backup.Path).GetProductsAsync());
+        Assert.Equal(1, restored.Stock);
+        using var reopened = new XLWorkbook(backup.Path);
+        Assert.Equal(sale.Id.ToString("D"), reopened.Worksheet("Sales").Cell("A2").GetString());
+        Assert.Equal(3000L, reopened.Worksheet("Sales").Cell("C2").GetValue<long>());
+        Assert.Equal(2, reopened.Worksheet("SaleItems").Cell("F2").GetValue<int>());
+    }
+
+    [Fact]
+    public async Task MacExcelOwnerFile_BlocksSaleUntilWorkbookIsClosed()
+    {
+        if (!OperatingSystem.IsMacOS())
+        {
+            return;
+        }
+
+        var path = await CreateDatabaseAsync();
+        var repository = new ExcelPosRepository(path);
+        var product = new Product { Name = "보리차", Price = 1500, Stock = 2 };
+        await repository.SaveProductAsync(product);
+        var cart = new CartService();
+        Assert.True(cart.Add(product).Succeeded);
+        var hash = await HashAsync(path);
+        var ownerFile = Path.Combine(_temporaryDirectory, "~$" + Path.GetFileName(path));
+        await File.WriteAllTextAsync(ownerFile, "Excel");
+
+        var sales = new SaleService(repository);
+        await Assert.ThrowsAsync<IOException>(() => sales.CompleteSaleAsync(cart));
+        Assert.Equal(hash, await HashAsync(path));
+        Assert.False(cart.IsEmpty);
+
+        File.Delete(ownerFile);
+        await sales.CompleteSaleAsync(cart);
+        Assert.Equal(1, Assert.Single(await repository.GetProductsAsync()).Stock);
+        Assert.True(cart.IsEmpty);
+    }
+
+    [Fact]
     public async Task Sale_AtomicallyWritesHistoryAndDeductsStock()
     {
         var databasePath = await CreateDatabaseAsync();
