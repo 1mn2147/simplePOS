@@ -407,6 +407,7 @@ public sealed class ExcelPosRepository : IPosRepository
         CancellationToken cancellationToken)
     {
         EnsureDatabaseExists();
+        EnsureWorkbookIsAvailableForWrite();
         var sourceHashBefore = await ComputeSha256Async(DatabasePath, cancellationToken).ConfigureAwait(false);
         var temporaryPath = CreateTemporaryWorkbookPath(DatabasePath);
         var preparedPath = CreateTemporaryWorkbookPath(DatabasePath);
@@ -437,12 +438,23 @@ public sealed class ExcelPosRepository : IPosRepository
                 throw new ExcelDatabaseChangedException(DatabasePath);
             }
 
+            EnsureWorkbookIsAvailableForWrite();
             AtomicFileCommit.Replace(temporaryPath, DatabasePath);
         }
         finally
         {
             AtomicFileCommit.TryDelete(preparedPath);
             AtomicFileCommit.TryDelete(temporaryPath);
+        }
+    }
+
+    private void EnsureWorkbookIsAvailableForWrite()
+    {
+        // Excel for Mac leaves an owner file while the workbook is open for editing.
+        if (OperatingSystem.IsMacOS() &&
+            File.Exists(Path.Combine(GetParentDirectory(DatabasePath), "~$" + Path.GetFileName(DatabasePath))))
+        {
+            throw new IOException("Excel에서 파일을 사용 중입니다. 통합 문서를 닫고 다시 시도하세요.");
         }
     }
 

@@ -54,6 +54,19 @@ dotnet test tests\Pos.App.Tests\Pos.App.Tests.csproj --configuration Release
 
 `Pos.App.Tests`는 Windows WPF 판매 흐름을 별도 임시 데이터로 검증한다. 기존 카탈로그 마이그레이션 테스트 1개는 `상품목록.xlsx` 샘플 파일이 필요하다.
 
+macOS에서는 같은 SDK로 판매 로직과 Excel 저장소를 검증할 수 있다. 저장소 루트에서 다음 명령을 실행한다.
+
+```sh
+dotnet test tests/Pos.Tests/Pos.Tests.csproj --configuration Release
+```
+
+실제 카탈로그 샘플이 있으면 `outputs/` 아래에 `상품목록.xlsx`를 둔다. 샘플이 없는 체크아웃에서는 아래 명령으로 해당 테스트 한 건을 제외한다. 이 경우에도 임시로 생성한 한글 상품 목록으로 마이그레이션, 판매, 백업 및 재열기를 검증한다.
+
+```sh
+dotnet test tests/Pos.Tests/Pos.Tests.csproj --configuration Release \
+  --filter 'FullyQualifiedName!~Migration_ReproducesCatalogQualityCounts_WithoutChangingSource'
+```
+
 화면을 변경할 때는 [DESIGN.md](DESIGN.md)의 POS 디자인 기준을 따른다. UI 테스트는 최소 창 크기, 긴 상품명·최대 금액, 가상 키보드, 스캔 결과, 설정 초안 보존, 네이티브 컨트롤의 자동화 동작을 포함한다. `SIMPLEPOS_QA_OUTPUT` 환경 변수에 폴더를 지정하면 주요 검증 화면을 PNG로 저장한다. 고배율 PNG는 렌더링 검증이며 실제 Windows 배율 변경이나 물리 터치·스캐너 검증을 대신하지 않는다.
 
 단일 EXE 게시:
