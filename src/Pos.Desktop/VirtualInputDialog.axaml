@@ -1,0 +1,100 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Pos.Desktop.VirtualInputDialog"
+        x:Name="VirtualInputWindow"
+        Title="화면 키보드"
+        Width="860"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="#EFEFF4"
+        KeyDown="OnWindowKeyDown">
+  <Window.Styles>
+    <Style Selector="Button.key">
+      <Setter Property="MinWidth" Value="64" />
+      <Setter Property="MinHeight" Value="52" />
+      <Setter Property="Margin" Value="3" />
+      <Setter Property="FontSize" Value="18" />
+    </Style>
+    <Style Selector="Button.action">
+      <Setter Property="MinHeight" Value="48" />
+      <Setter Property="Margin" Value="3" />
+      <Setter Property="Padding" Value="18,8" />
+    </Style>
+  </Window.Styles>
+
+  <Border Margin="16" Padding="20" Background="White" CornerRadius="8">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="14">
+      <TextBlock x:Name="InputLabel" FontSize="17" FontWeight="SemiBold" />
+      <TextBox Grid.Row="1"
+               x:Name="InputPreview"
+               AutomationProperties.Name="가상 키보드 입력값"
+               IsReadOnly="True"
+               FontSize="22"
+               MinHeight="52" />
+
+      <StackPanel Grid.Row="2" x:Name="KoreanPanel" Spacing="2">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+          <Button Classes="key" Tag="ㅂ" Content="ㅂ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅈ" Content="ㅈ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㄷ" Content="ㄷ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㄱ" Content="ㄱ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅅ" Content="ㅅ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅛ" Content="ㅛ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅕ" Content="ㅕ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅑ" Content="ㅑ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅐ" Content="ㅐ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅔ" Content="ㅔ" Click="OnKoreanKey" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+          <Button Classes="key" Tag="ㅁ" Content="ㅁ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㄴ" Content="ㄴ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅇ" Content="ㅇ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㄹ" Content="ㄹ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅎ" Content="ㅎ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅗ" Content="ㅗ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅓ" Content="ㅓ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅏ" Content="ㅏ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅣ" Content="ㅣ" Click="OnKoreanKey" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+          <Button x:Name="ShiftButton" Classes="key" Content="Shift 꺼짐" Click="OnShift" />
+          <Button Classes="key" Tag="ㅋ" Content="ㅋ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅌ" Content="ㅌ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅊ" Content="ㅊ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅍ" Content="ㅍ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅠ" Content="ㅠ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅜ" Content="ㅜ" Click="OnKoreanKey" />
+          <Button Classes="key" Tag="ㅡ" Content="ㅡ" Click="OnKoreanKey" />
+          <Button Classes="key" Content="지우기" Click="OnBackspace" />
+        </StackPanel>
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <Button Classes="action" Content="전체 지우기" Click="OnClear" />
+          <Button Grid.Column="1" Classes="action" Content="공백" Click="OnSpace" />
+          <Button Grid.Column="2" Classes="action" Content="완료" Click="OnConfirm" />
+        </Grid>
+      </StackPanel>
+
+      <Grid Grid.Row="2" x:Name="NumericPanel" ColumnDefinitions="*,*,*,*" RowDefinitions="Auto,Auto,Auto,Auto">
+        <Button Classes="key" Content="7" Click="OnNumericKey" />
+        <Button Grid.Column="1" Classes="key" Content="8" Click="OnNumericKey" />
+        <Button Grid.Column="2" Classes="key" Content="9" Click="OnNumericKey" />
+        <Button Grid.Column="3" Classes="key" Content="지우기" Click="OnBackspace" />
+        <Button Grid.Row="1" Classes="key" Content="4" Click="OnNumericKey" />
+        <Button Grid.Row="1" Grid.Column="1" Classes="key" Content="5" Click="OnNumericKey" />
+        <Button Grid.Row="1" Grid.Column="2" Classes="key" Content="6" Click="OnNumericKey" />
+        <Button Grid.Row="1" Grid.Column="3" Classes="key" Content="전체 지우기" Click="OnClear" />
+        <Button Grid.Row="2" Classes="key" Content="1" Click="OnNumericKey" />
+        <Button Grid.Row="2" Grid.Column="1" Classes="key" Content="2" Click="OnNumericKey" />
+        <Button Grid.Row="2" Grid.Column="2" Classes="key" Content="3" Click="OnNumericKey" />
+        <Button Grid.Row="2" Grid.Column="3" Classes="key" Content="00" Click="OnNumericKey" />
+        <Button Grid.Row="3" Grid.ColumnSpan="2" Classes="key" Content="0" Click="OnNumericKey" />
+        <Button Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="2" Classes="key" Content="완료" Click="OnConfirm" />
+      </Grid>
+
+      <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+        <Button x:Name="CancelButton" Classes="action" Content="취소" Click="OnCancel" />
+      </StackPanel>
+    </Grid>
+  </Border>
+</Window>

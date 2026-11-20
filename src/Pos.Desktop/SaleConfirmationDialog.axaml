@@ -1,0 +1,21 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Pos.Desktop.SaleConfirmationDialog"
+        Title="재고 부족"
+        Width="420"
+        Height="240"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="White">
+  <Grid Margin="28" RowDefinitions="*,Auto">
+    <StackPanel Spacing="12">
+      <TextBlock Text="재고가 부족합니다" FontSize="22" FontWeight="Bold" />
+      <TextBlock x:Name="ConfirmationSummary" FontSize="16" TextWrapping="Wrap" />
+      <TextBlock Foreground="#6B6B6B" Text="그래도 장바구니에 담을지 확인해 주세요." TextWrapping="Wrap" />
+    </StackPanel>
+    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button Content="취소" MinWidth="90" Click="OnCancel" />
+      <Button Content="그래도 담기" MinWidth="110" Background="#006DFF" Foreground="White" Click="OnConfirm" />
+    </StackPanel>
+  </Grid>
+</Window>

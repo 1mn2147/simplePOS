@@ -1,8 +1,8 @@
 # Simple POS
 
-Windows x64용 경량 POS 앱이다. 상품과 판매 데이터는 Excel `.xlsx`에 저장하며 Excel이나 .NET을 별도로 설치하지 않아도 동작한다.
+Windows x64와 Apple Silicon Mac에서 실행하는 경량 POS 앱이다. 상품과 판매 데이터는 Excel `.xlsx`에 저장하며 Excel이나 .NET을 별도로 설치하지 않아도 동작한다.
 
-## 다운로드
+## Windows 다운로드
 
 [Simple POS v1.1.1](https://github.com/1mn2147/simplePOS/releases/tag/v1.1.1)에서 `SimplePOS-1.1.1-win-x64.exe`와 SHA-256 체크섬 파일을 내려받을 수 있다.
 
@@ -12,7 +12,7 @@ Get-FileHash .\SimplePOS-1.1.1-win-x64.exe -Algorithm SHA256
 
 현재 실행 파일은 코드 서명되지 않아 Windows SmartScreen에서 알 수 없는 게시자 경고가 표시될 수 있다.
 
-## 현재 구현
+## Windows 버전 기능
 
 - 바코드 스캔, 미등록 바코드 상품 추가 연결, 4열 빠른 추가
 - 장바구니 수량 조절, 상품 수정/제거, 비우기, 판매 완료
@@ -39,6 +39,41 @@ Get-FileHash .\SimplePOS-1.1.1-win-x64.exe -Algorithm SHA256
 
 개발 빌드의 게시 파일은 `artifacts/publish/win-x64/SimplePOS.exe`다. 첫 실행 시 `%LocalAppData%\SimplePOS` 아래에 설정, 기본 Excel DB, 로그를 만든다. 기존 Excel은 설정 화면의 `파일 선택`으로 지정하며, 구형 3열 파일은 원본을 유지한 채 `_pos.xlsx` 복사본으로 변환한다.
 
+### macOS 실행 및 패키징
+
+macOS 패키지는 Apple Silicon용이며 번들의 최소 버전은 macOS 15.0이다. 로컬 실행용 앱을 만들려면 저장소 루트에서 다음 스크립트를 실행한다. 빌드에는 `global.json`에 지정한 .NET SDK와 Apple Command Line Tools가 필요하다.
+
+```sh
+./scripts/publish-macos.sh
+```
+
+결과는 `artifacts/publish/osx-arm64/`에 생성된다. `SimplePOS.app`을 열면 판매 화면이 표시된다. 다른 폴더로 옮길 때는 앱 번들 전체를 복사하거나 ZIP을 풀어서 실행한다. 앱에는 .NET 런타임이 포함된다. 앱 버전 1.1.1의 ZIP은 출력 폴더에서 다음 명령으로 확인한다.
+
+```sh
+shasum -a 256 -c SimplePOS-1.1.1-osx-arm64.zip.sha256
+```
+
+로컬 설치 테스트용 DMG를 만들려면 앱 빌드 후 저장소 루트에서 `./scripts/create-macos-dmg.sh`를 실행한다. 같은 출력 폴더에 `SimplePOS-1.1.1-osx-arm64.dmg`와 `.dmg.sha256` 파일이 생성된다. DMG를 열고 `SimplePOS.app`을 옆의 `Applications` 폴더로 드래그한 뒤 응용 프로그램에서 실행한다. DMG 자체는 서명과 공증 없이 생성된다.
+
+기본 빌드는 로컬 테스트용 임시 서명(ad hoc)을 사용한다. 외부 배포용 ZIP을 만들 때는 빌드 Mac의 키체인에 Developer ID Application 인증서와 개인 키, `notarytool` 프로필을 준비한 뒤 실제 이름을 인수로 전달한다. 이 명령은 Apple 공증 서비스에 ZIP을 제출하고, 승인된 티켓을 앱에 첨부한 뒤 배포용 ZIP과 체크섬을 생성한다.
+
+```sh
+./scripts/publish-macos.sh --identity "Developer ID Application: Example (TEAMID)" \
+  --notary-profile "simplepos-notary"
+```
+
+개발 중에는 저장소 루트에서 .NET SDK로 실행할 수 있다.
+
+```sh
+dotnet run --project src/Pos.Desktop
+```
+
+첫 실행 시 기본 데이터 디렉터리에 빈 `data/products.xlsx`를 만든다. 판매 화면의 **상품 관리**에서 첫 상품의 이름, 가격, 바코드를 등록한다. 상품을 스캔하거나 검색 결과에서 수량을 지정해 담은 뒤 판매를 확정하면 같은 파일에 재고와 판매 이력이 저장된다. 한글과 숫자 입력 버튼은 화면 키보드를 연다.
+
+**설정**에서 기존 SimplePOS DB를 선택하거나 구형 Excel 상품 목록을 별도 파일로 변환할 수 있다. 장바구니가 비어 있으면 다른 DB로 전환할 수 있다. 같은 화면에서 백업 위치와 주기, 수동 백업, 재고 부족 처리, 스캔 성공음, 로그인 시 자동 실행을 설정한다. 예약 백업은 앱이 실행 중일 때 진행된다.
+
+시작할 때 특정 DB를 열려면 `dotnet run --project src/Pos.Desktop -- "/path/to/products.xlsx"`로 실행한다. 인수를 생략하면 마지막으로 설정에 저장한 DB를 연다. 개발·테스트 데이터를 분리할 때는 `SIMPLEPOS_HOME`에 별도의 디렉터리를 지정한다. macOS 화면과 서비스 테스트는 `dotnet test tests/Pos.Desktop.Tests -c Release`로 실행한다.
+
 ## 개발
 
 .NET SDK 10.0.401 이상을 설치한다. `global.json`에 사용할 SDK 버전이 고정되어 있다.
@@ -53,6 +88,19 @@ dotnet test tests\Pos.App.Tests\Pos.App.Tests.csproj --configuration Release
 ```
 
 `Pos.App.Tests`는 Windows WPF 판매 흐름을 별도 임시 데이터로 검증한다. 기존 카탈로그 마이그레이션 테스트 1개는 `상품목록.xlsx` 샘플 파일이 필요하다.
+
+macOS에서는 같은 SDK로 판매 로직과 Excel 저장소를 검증할 수 있다. 저장소 루트에서 다음 명령을 실행한다.
+
+```sh
+dotnet test tests/Pos.Tests/Pos.Tests.csproj --configuration Release
+```
+
+실제 카탈로그 샘플이 있으면 `outputs/` 아래에 `상품목록.xlsx`를 둔다. 샘플이 없는 체크아웃에서는 아래 명령으로 해당 테스트 한 건을 제외한다. 이 경우에도 임시로 생성한 한글 상품 목록으로 마이그레이션, 판매, 백업 및 재열기를 검증한다.
+
+```sh
+dotnet test tests/Pos.Tests/Pos.Tests.csproj --configuration Release \
+  --filter 'FullyQualifiedName!~Migration_ReproducesCatalogQualityCounts_WithoutChangingSource'
+```
 
 화면을 변경할 때는 [DESIGN.md](DESIGN.md)의 POS 디자인 기준을 따른다. UI 테스트는 최소 창 크기, 긴 상품명·최대 금액, 가상 키보드, 스캔 결과, 설정 초안 보존, 네이티브 컨트롤의 자동화 동작을 포함한다. `SIMPLEPOS_QA_OUTPUT` 환경 변수에 폴더를 지정하면 주요 검증 화면을 PNG로 저장한다. 고배율 PNG는 렌더링 검증이며 실제 Windows 배율 변경이나 물리 터치·스캐너 검증을 대신하지 않는다.
 

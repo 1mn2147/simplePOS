@@ -1,0 +1,164 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Pos.Desktop.ProductManagementWindow"
+        Title="상품 관리"
+        Width="1120"
+        Height="760"
+        MinWidth="920"
+        MinHeight="620"
+        Background="#EFEFF4"
+        FontFamily="Apple SD Gothic Neo, Malgun Gothic, sans-serif">
+  <Window.Styles>
+    <Style Selector="Button">
+      <Setter Property="MinHeight" Value="42" />
+      <Setter Property="Padding" Value="14,8" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#006DFF" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="#6B6B6B" />
+    </Style>
+    <Style Selector="TextBox.error">
+      <Setter Property="BorderBrush" Value="#B91C1C" />
+      <Setter Property="BorderThickness" Value="2" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="64,*">
+    <Border Background="#1A283E" Padding="24,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+          <Border Width="18" Height="24" Background="#F4D35E" CornerRadius="2" />
+          <TextBlock Text="상품 관리" Foreground="White" FontSize="21" FontWeight="Bold" />
+        </StackPanel>
+        <Button Grid.Column="1" Background="#EEF4FF" Foreground="#102D55" Content="닫기" Click="OnCloseClick" />
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" Margin="20" ColumnDefinitions="5*,4*" ColumnSpacing="16">
+      <Border Background="White" CornerRadius="8" Padding="20">
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <TextBox x:Name="ProductSearchInput"
+                     AutomationProperties.Name="상품 검색"
+                     Watermark="상품명, 공급사, 바코드 검색"
+                     TextChanged="OnSearchChanged" />
+            <Button Grid.Column="1" Content="한글" Tag="Search" Click="OnVirtualInputClick" />
+            <Button Grid.Column="2" x:Name="AddProductButton" Content="상품 추가" Classes="primary" Click="OnAddClick" />
+          </Grid>
+          <TextBlock Grid.Row="1" x:Name="ProductCountText" Margin="0,10,0,10" Classes="muted" />
+          <Grid Grid.Row="2">
+            <TextBlock x:Name="EmptyProductsText"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Classes="muted"
+                       Text="등록된 상품이 없습니다. 상품을 추가하세요." />
+            <ListBox x:Name="ProductList"
+                     AutomationProperties.Name="상품 목록"
+                     SelectionChanged="OnProductSelectionChanged">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Grid MinHeight="64" ColumnDefinitions="*,Auto" Margin="6">
+                    <StackPanel VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16" />
+                      <TextBlock Text="{Binding Barcode, StringFormat=바코드 {0}}" Classes="muted" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Price, StringFormat={}{0:N0}원}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding Stock, StringFormat=재고 {0:N0}}" Classes="muted" />
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Grid>
+          <Grid Grid.Row="3" Margin="0,12,0,0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+            <Button x:Name="EditProductButton" Content="선택 상품 수정" Click="OnEditClick" />
+            <Grid Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBox x:Name="ProductQuantityInput"
+                       AutomationProperties.Name="장바구니 수량"
+                       Watermark="수량"
+                       Text="1"
+                       HorizontalContentAlignment="Right" />
+              <Button Grid.Column="1" Content="숫자" Tag="Quantity" Click="OnVirtualInputClick" />
+            </Grid>
+            <Button Grid.Column="2"
+                    x:Name="SelectProductButton"
+                    Classes="primary"
+                    Content="장바구니에 담기"
+                    Click="OnSelectProductClick" />
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="20">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel x:Name="ProductEditorPanel" Spacing="10">
+            <TextBlock x:Name="EditorTitle" Text="상품 추가" FontSize="24" FontWeight="Bold" />
+            <TextBlock x:Name="EditorHint" Classes="muted" TextWrapping="Wrap" />
+
+            <TextBlock Text="상품명" FontWeight="SemiBold" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBox x:Name="ProductNameInput" AutomationProperties.Name="상품명" />
+              <Button Grid.Column="1" Content="한글" Tag="Name" Click="OnVirtualInputClick" />
+            </Grid>
+            <TextBlock Text="가격" FontWeight="SemiBold" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBox x:Name="ProductPriceInput" AutomationProperties.Name="가격" HorizontalContentAlignment="Right" />
+              <Button Grid.Column="1" Content="숫자" Tag="Price" Click="OnVirtualInputClick" />
+            </Grid>
+            <TextBlock Text="바코드" FontWeight="SemiBold" />
+            <TextBox x:Name="ProductBarcodeInput" AutomationProperties.Name="상품 바코드" />
+            <TextBlock Text="공급사" FontWeight="SemiBold" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBox x:Name="ProductSupplierInput" AutomationProperties.Name="공급사" />
+              <Button Grid.Column="1" Content="한글" Tag="Supplier" Click="OnVirtualInputClick" />
+            </Grid>
+            <TextBlock Text="재고 · 비워 두면 재고를 관리하지 않습니다" FontWeight="SemiBold" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBox x:Name="ProductStockInput" AutomationProperties.Name="재고" HorizontalContentAlignment="Right" />
+              <Button Grid.Column="1" Content="숫자" Tag="Stock" Click="OnVirtualInputClick" />
+            </Grid>
+            <TextBlock Text="카테고리" FontWeight="SemiBold" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBox x:Name="ProductCategoryInput" AutomationProperties.Name="카테고리" />
+              <Button Grid.Column="1" Content="한글" Tag="Category" Click="OnVirtualInputClick" />
+            </Grid>
+            <TextBlock Text="정렬 순서" FontWeight="SemiBold" />
+            <NumericUpDown x:Name="ProductSortOrderInput"
+                           AutomationProperties.Name="정렬 순서"
+                           Minimum="0"
+                           Maximum="999999"
+                           Value="0" />
+            <StackPanel Orientation="Horizontal" Spacing="16">
+              <CheckBox x:Name="ProductQuickAddInput" Content="빠른 추가에 표시" />
+              <CheckBox x:Name="ProductActiveInput" Content="판매 사용" IsChecked="True" />
+            </StackPanel>
+
+            <Border Padding="10" Background="#F8FAFC" CornerRadius="6">
+              <TextBlock x:Name="ProductValidationText"
+                         AutomationProperties.Name="상품 입력 검증 안내"
+                         Classes="muted"
+                         Text="상품 정보를 입력하고 저장하세요."
+                         TextWrapping="Wrap" />
+            </Border>
+            <CheckBox x:Name="ProductWarningConfirmation"
+                      IsVisible="False"
+                      Content="경고를 확인했으며 이 내용으로 저장합니다." />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <Button Content="입력 취소" Click="OnCancelEditClick" />
+              <Button Grid.Column="1"
+                      x:Name="SaveProductButton"
+                      Classes="primary"
+                      Content="상품 저장"
+                      Click="OnSaveClick" />
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Grid>
+  </Grid>
+</Window>
