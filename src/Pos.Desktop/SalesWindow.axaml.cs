@@ -7,14 +7,20 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Pos.Core;
+using Pos.Infrastructure;
 
 namespace Pos.Desktop;
 
 public partial class SalesWindow : Window
 {
     private static readonly IBrush RowBorderBrush = new SolidColorBrush(Color.Parse("#E8E8EC"));
-    private readonly IPosRepository? _repository;
-    private readonly OutOfStockPolicy _outOfStockPolicy;
+    private IPosRepository? _repository;
+    private OutOfStockPolicy _outOfStockPolicy;
+    private AppSettings _settings = new();
+    private BarcodeInputBuffer _scanner = new(new AppSettings());
+    private Func<AppSettings, Task<IPosRepository>>? _applySettings;
+    private Action _playScanSound = static () => { };
+    private BackupService _backupService = new();
     private readonly CartService _cart = new();
     private readonly SemaphoreSlim _scanGate = new(1, 1);
     private readonly TextBox _barcodeInput;
@@ -26,11 +32,16 @@ public partial class SalesWindow : Window
     private readonly StackPanel _cartItemsPanel;
     private readonly WrapPanel _quickAddPanel;
     private readonly Button _clearCartButton;
+    private readonly Button _undoCartButton;
     private readonly Button _completeSaleButton;
+    private readonly Button _productManagementButton;
+    private readonly Button _settingsButton;
+    private readonly TextBlock _backupStatusText;
     private readonly Border _saleConfirmationPanel;
     private readonly TextBlock _confirmationSummary;
     private bool _initialized;
     private bool _isBusy;
+    private bool _isDialogOpen;
     private int _pendingScanCount;
 
     public SalesWindow()
@@ -45,22 +56,50 @@ public partial class SalesWindow : Window
         _cartItemsPanel = this.FindControl<StackPanel>("CartItemsPanel")!;
         _quickAddPanel = this.FindControl<WrapPanel>("QuickAddPanel")!;
         _clearCartButton = this.FindControl<Button>("ClearCartButton")!;
+        _undoCartButton = this.FindControl<Button>("UndoCartButton")!;
         _completeSaleButton = this.FindControl<Button>("CompleteSaleButton")!;
+        _productManagementButton = this.FindControl<Button>("ProductManagementButton")!;
+        _settingsButton = this.FindControl<Button>("SettingsButton")!;
+        _backupStatusText = this.FindControl<TextBlock>("BackupStatusText")!;
         _saleConfirmationPanel = this.FindControl<Border>("SaleConfirmationPanel")!;
         _confirmationSummary = this.FindControl<TextBlock>("ConfirmationSummary")!;
+        AddHandler(KeyDownEvent, OnWindowKeyDown, RoutingStrategies.Tunnel);
+        AddHandler(TextInputEvent, OnScannerText, RoutingStrategies.Tunnel);
         Opened += OnOpened;
     }
 
-    public SalesWindow(IPosRepository repository, OutOfStockPolicy policy) : this()
+    public SalesWindow(IPosRepository repository, OutOfStockPolicy policy)
+        : this(
+            repository,
+            new AppSettings { OutOfStockPolicy = policy },
+            settings => Task.FromResult(repository),
+            static () => { },
+            new BackupService())
+    {
+    }
+
+    public SalesWindow(
+        IPosRepository repository,
+        AppSettings settings,
+        Func<AppSettings, Task<IPosRepository>> applySettings,
+        Action playScanSound,
+        BackupService backupService) : this()
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        if (!Enum.IsDefined(policy))
+        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _applySettings = applySettings ?? throw new ArgumentNullException(nameof(applySettings));
+        _playScanSound = playScanSound ?? throw new ArgumentNullException(nameof(playScanSound));
+        _backupService = backupService ?? throw new ArgumentNullException(nameof(backupService));
+        if (!Enum.IsDefined(settings.OutOfStockPolicy))
         {
-            throw new ArgumentOutOfRangeException(nameof(policy));
+            throw new ArgumentOutOfRangeException(nameof(settings));
         }
 
-        _outOfStockPolicy = policy;
+        _outOfStockPolicy = settings.OutOfStockPolicy;
+        _scanner = new BarcodeInputBuffer(settings);
     }
+
+    public void SetBackupStatus(string status) => _backupStatusText.Text = $"백업 {status}";
 
     public async Task InitializeAsync()
     {
@@ -101,13 +140,15 @@ public partial class SalesWindow : Window
             var product = await EnsureRepository().FindProductByBarcodeAsync(normalizedBarcode);
             if (product is null)
             {
-                ShowStatus(
-                    $"미등록 바코드 {normalizedBarcode} · 현재 사용 중인 SimplePOS Excel DB에 상품을 먼저 등록해 주세요.",
-                    isError: true);
+                ShowStatus($"미등록 바코드 {normalizedBarcode} · 새 상품 등록 화면을 엽니다.");
+                await OpenProductManagementAsync(normalizedBarcode);
                 return;
             }
 
-            await AddProductAsync(product);
+            if (await AddProductAsync(product))
+            {
+                TryPlayScanSound();
+            }
         }
         catch (Exception exception)
         {
@@ -185,19 +226,6 @@ public partial class SalesWindow : Window
         }
     }
 
-    private async void OnBarcodeKeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Enter)
-        {
-            return;
-        }
-
-        e.Handled = true;
-        var barcode = _barcodeInput.Text ?? string.Empty;
-        _barcodeInput.Clear();
-        await ProcessBarcodeAsync(barcode);
-    }
-
     private async void OnAddBarcodeClick(object? sender, RoutedEventArgs e)
     {
         var barcode = _barcodeInput.Text ?? string.Empty;
@@ -215,6 +243,18 @@ public partial class SalesWindow : Window
         _cart.Clear();
         RefreshCart();
         ShowStatus("장바구니를 비웠습니다.");
+        FocusScanner();
+    }
+
+    private void OnUndoCartClick(object? sender, RoutedEventArgs e)
+    {
+        if (IsMutationLocked || !_cart.UndoRemoval())
+        {
+            return;
+        }
+
+        RefreshCart();
+        ShowStatus("마지막 장바구니 삭제를 되돌렸습니다.");
         FocusScanner();
     }
 
@@ -276,8 +316,8 @@ public partial class SalesWindow : Window
             _quickAddPanel.Children.Add(new TextBlock
             {
                 Text = products.Count == 0
-                    ? "등록된 상품이 없습니다. 기존 SimplePOS Excel DB 경로를 실행 인수로 지정해 주세요."
-                    : "빠른 추가 상품이 없습니다. 현재 macOS 판매 화면에서는 기존 Windows 앱에서 빠른 추가 상품을 설정한 DB를 사용합니다.",
+                    ? "등록된 상품이 없습니다. 상품 관리에서 첫 상품을 등록하세요."
+                    : "빠른 추가 상품이 없습니다. 상품 관리에서 원하는 상품의 ‘빠른 추가에 표시’를 선택하세요.",
                 Foreground = Brushes.DimGray,
                 TextWrapping = TextWrapping.Wrap,
                 MaxWidth = 340,
@@ -302,46 +342,51 @@ public partial class SalesWindow : Window
         FocusScanner();
     }
 
-    private async Task AddProductAsync(Product product)
+    private async Task<bool> AddProductAsync(Product product, int quantity = 1)
     {
         if (IsMutationLocked)
         {
-            return;
+            return false;
         }
 
         if (!product.IsActive)
         {
             ShowStatus($"{product.Name} · 판매 중지 상품입니다.", isError: true);
-            return;
+            return false;
         }
 
         CartMutationResult result;
         try
         {
-            result = _cart.Add(product, outOfStockPolicy: _outOfStockPolicy);
+            result = _cart.Add(product, quantity, outOfStockPolicy: _outOfStockPolicy);
             if (result.Status == CartMutationStatus.OutOfStockConfirmationRequired)
             {
                 var confirmed = await ShowStockConfirmationAsync(product);
                 if (confirmed)
                 {
-                    result = _cart.Add(product, outOfStockPolicy: _outOfStockPolicy, outOfStockConfirmed: true);
+                    result = _cart.Add(
+                        product,
+                        quantity,
+                        outOfStockPolicy: _outOfStockPolicy,
+                        outOfStockConfirmed: true);
                 }
             }
         }
         catch (ArgumentOutOfRangeException exception)
         {
             ShowStatus($"{product.Name} · {exception.Message}", isError: true);
-            return;
+            return false;
         }
 
         if (!result.Succeeded)
         {
             ShowStatus($"{product.Name} · {result.Message ?? "장바구니에 담지 못했습니다."}", isError: true);
-            return;
+            return false;
         }
 
         RefreshCart();
         ShowStatus($"{product.Name} · 수량 {result.Line!.Quantity:N0}개");
+        return true;
     }
 
     private async Task<bool> ShowStockConfirmationAsync(Product product)
@@ -367,7 +412,10 @@ public partial class SalesWindow : Window
         _totalItemCountText.Text = $"{_cart.ItemCount:N0}개";
         _totalAmountText.Text = $"{_cart.Total:N0}원";
         _clearCartButton.IsEnabled = !_cart.IsEmpty && !IsMutationLocked;
+        _undoCartButton.IsEnabled = _cart.CanUndoRemoval && !IsMutationLocked;
         _completeSaleButton.IsEnabled = !_cart.IsEmpty && !IsCheckoutLocked;
+        _productManagementButton.IsEnabled = !IsSessionLocked;
+        _settingsButton.IsEnabled = !IsSessionLocked;
     }
 
     private Control CreateCartRow(CartLine line)
@@ -504,6 +552,200 @@ public partial class SalesWindow : Window
         RefreshCart();
     }
 
+    private async void OnProductManagementClick(object? sender, RoutedEventArgs e)
+    {
+        if (IsSessionLocked)
+        {
+            return;
+        }
+
+        await OpenProductManagementAsync();
+    }
+
+    private async Task OpenProductManagementAsync(string? newBarcode = null)
+    {
+        if (_isDialogOpen || _isBusy || _saleConfirmationPanel.IsVisible)
+        {
+            return;
+        }
+
+        _isDialogOpen = true;
+        RefreshCart();
+        try
+        {
+            var dialog = new ProductManagementWindow(EnsureRepository(), newBarcode);
+            var selected = await dialog.ShowDialog<bool>(this);
+            await ReloadProductsAsync();
+            _isDialogOpen = false;
+            if (selected && dialog.SelectedProduct is not null)
+            {
+                await AddProductAsync(dialog.SelectedProduct, dialog.SelectedQuantity);
+            }
+        }
+        catch (Exception exception)
+        {
+            ShowStatus($"상품 화면을 처리하지 못했습니다. {exception.Message}", isError: true);
+        }
+        finally
+        {
+            _isDialogOpen = false;
+            RefreshCart();
+            FocusScanner();
+        }
+    }
+
+    private async void OnSettingsClick(object? sender, RoutedEventArgs e)
+    {
+        if (IsSessionLocked)
+        {
+            return;
+        }
+
+        _isDialogOpen = true;
+        RefreshCart();
+        try
+        {
+            var dialog = new SettingsWindow(_settings, !_cart.IsEmpty, _backupService);
+            var updated = await dialog.ShowDialog<AppSettings?>(this);
+            if (updated is null)
+            {
+                return;
+            }
+
+            var switchedDatabase = DatabaseChanged(_settings.DatabasePath, updated.DatabasePath);
+            if (!_cart.IsEmpty && switchedDatabase)
+            {
+                ShowStatus("판매 중에는 상품 DB를 변경할 수 없습니다. 장바구니를 비운 뒤 다시 시도하세요.", isError: true);
+                return;
+            }
+
+            var scanner = new BarcodeInputBuffer(updated);
+            var repository = await (_applySettings
+                ?? throw new InvalidOperationException("설정 저장 기능이 연결되지 않았습니다."))(updated);
+            _repository = repository ?? throw new InvalidOperationException("새 상품 데이터 저장소가 연결되지 않았습니다.");
+            _settings = updated;
+            _outOfStockPolicy = updated.OutOfStockPolicy;
+            _scanner = scanner;
+            if (switchedDatabase)
+            {
+                _cart.Clear(allowUndo: false);
+            }
+
+            try
+            {
+                await ReloadProductsAsync();
+                ShowStatus("설정을 저장했습니다.");
+            }
+            catch (Exception exception)
+            {
+                ShowCatalogUnavailable();
+                ShowStatus($"설정을 저장했습니다. 상품 목록을 다시 열어 주세요. {exception.Message}", isError: true);
+            }
+        }
+        catch (Exception exception)
+        {
+            ShowStatus($"설정을 저장하지 못했습니다. {exception.Message}", isError: true);
+        }
+        finally
+        {
+            _isDialogOpen = false;
+            RefreshCart();
+            FocusScanner();
+        }
+    }
+
+    private void OnScannerText(object? sender, TextInputEventArgs e)
+    {
+        if (IsMutationLocked || e.Source is TextBox || FocusManager?.GetFocusedElement() is TextBox)
+        {
+            _scanner.Reset();
+            return;
+        }
+
+        foreach (var ch in e.Text ?? string.Empty)
+        {
+            if (char.IsWhiteSpace(ch))
+            {
+                _scanner.Reset();
+                return;
+            }
+            _scanner.PushCharacter(ch, DateTimeOffset.UtcNow);
+            e.Handled = true;
+        }
+    }
+
+    private async void OnWindowKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyModifiers is KeyModifiers.Control or KeyModifiers.Meta)
+        {
+            if (e.Key == Key.Z && string.IsNullOrEmpty(_barcodeInput.Text))
+            {
+                e.Handled = true;
+                OnUndoCartClick(sender, e);
+            }
+            else if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                OnCompleteSaleClick(sender, e);
+            }
+            return;
+        }
+
+        var terminator = e.Key == Key.Enter ? "Enter" : "Tab";
+        if (IsMutationLocked || e.KeyModifiers != KeyModifiers.None ||
+            e.Key is not (Key.Tab or Key.Enter) ||
+            !string.Equals(terminator, _settings.ScannerTerminatorKey, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (e.Source == _barcodeInput || FocusManager?.GetFocusedElement() == _barcodeInput)
+        {
+            if (string.IsNullOrEmpty(_barcodeInput.Text) && e.Key == Key.Tab) return;
+            e.Handled = true;
+            var barcode = _barcodeInput.Text ?? string.Empty;
+            _barcodeInput.Clear();
+            await ProcessBarcodeAsync(barcode);
+        }
+        else if (_scanner.BufferedText.Length > 0)
+        {
+            var scan = _scanner.PushKey(terminator, DateTimeOffset.UtcNow);
+            e.Handled = true;
+            if (scan.Barcode is not null)
+            {
+                await ProcessBarcodeAsync(scan.Barcode);
+            }
+        }
+    }
+
+    private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (!_isBusy && !_isDialogOpen && _pendingScanCount == 0)
+        {
+            return;
+        }
+
+        e.Cancel = true;
+        ShowStatus("현재 작업을 마친 뒤 창을 닫아 주세요.", isError: true);
+    }
+
+    private void TryPlayScanSound()
+    {
+        if (!_settings.ScannerSuccessSoundEnabled)
+        {
+            return;
+        }
+
+        try
+        {
+            _playScanSound();
+        }
+        catch
+        {
+            // 판매 입력은 소리 출력 장치 오류와 무관하게 성공 상태를 유지한다.
+        }
+    }
+
     private void ShowStatus(string message, bool isError = false)
     {
         _statusMessage.Text = message;
@@ -512,9 +754,21 @@ public partial class SalesWindow : Window
 
     private void FocusScanner() => Dispatcher.UIThread.Post(() => _barcodeInput.Focus());
 
-    private bool IsMutationLocked => _isBusy || _saleConfirmationPanel.IsVisible;
+    private bool IsMutationLocked => _isBusy || _saleConfirmationPanel.IsVisible || _isDialogOpen;
 
     private bool IsCheckoutLocked => IsMutationLocked || _pendingScanCount > 0;
+
+    private bool IsSessionLocked => IsCheckoutLocked;
+
+    private static bool DatabaseChanged(string? current, string? updated)
+    {
+        if (string.IsNullOrWhiteSpace(current) || string.IsNullOrWhiteSpace(updated))
+        {
+            return !string.Equals(current, updated, StringComparison.Ordinal);
+        }
+
+        return !string.Equals(Path.GetFullPath(current), Path.GetFullPath(updated), StringComparison.Ordinal);
+    }
 
     private void ShowCatalogUnavailable()
     {

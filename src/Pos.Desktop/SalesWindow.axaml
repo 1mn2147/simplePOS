@@ -7,7 +7,8 @@
         MinWidth="900"
         MinHeight="600"
         Background="#EFEFF4"
-        FontFamily="Apple SD Gothic Neo, Malgun Gothic, sans-serif">
+        FontFamily="Apple SD Gothic Neo, Malgun Gothic, sans-serif"
+        Closing="OnWindowClosing">
   <Window.Styles>
     <Style Selector="Button">
       <Setter Property="MinHeight" Value="44" />
@@ -29,16 +30,31 @@
 
   <Grid RowDefinitions="64,Auto,*" Margin="0">
     <Border Grid.Row="0" Background="#1A283E" Padding="24,0">
-      <Grid ColumnDefinitions="*,Auto">
+      <Grid ColumnDefinitions="Auto,*,Auto">
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
           <Border Width="18" Height="24" Background="#F4D35E" CornerRadius="2" />
           <TextBlock Text="Simple POS" Foreground="White" FontSize="21" FontWeight="Bold" />
         </StackPanel>
-        <TextBlock Grid.Column="1"
-                   x:Name="DatabaseStatusText"
-                   VerticalAlignment="Center"
-                   Foreground="#B9C3D2"
-                   Text="상품 데이터 연결 중" />
+        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+          <TextBlock x:Name="BackupStatusText"
+                     VerticalAlignment="Center"
+                     Foreground="#B9C3D2"
+                     Text="백업 대기" />
+          <TextBlock x:Name="DatabaseStatusText"
+                     VerticalAlignment="Center"
+                     Foreground="#B9C3D2"
+                     Text="상품 데이터 연결 중" />
+          <Button x:Name="ProductManagementButton"
+                  AutomationProperties.Name="상품 찾기 및 관리"
+                  Background="#EEF4FF" Foreground="#102D55"
+                  Content="상품 관리"
+                  Click="OnProductManagementClick" />
+          <Button x:Name="SettingsButton"
+                  AutomationProperties.Name="설정"
+                  Background="#EEF4FF" Foreground="#102D55"
+                  Content="설정"
+                  Click="OnSettingsClick" />
+        </StackPanel>
       </Grid>
     </Border>
 
@@ -48,10 +64,9 @@
         <TextBox Grid.Column="1"
                  x:Name="BarcodeInput"
                  AutomationProperties.Name="바코드 입력"
-                 Watermark="바코드를 스캔하거나 입력한 뒤 Enter"
+                 Watermark="바코드를 스캔하거나 입력하세요"
                  FontSize="18"
-                 MinHeight="48"
-                 KeyDown="OnBarcodeKeyDown" />
+                 MinHeight="48" />
         <Button Grid.Column="2"
                 x:Name="AddBarcodeButton"
                 AutomationProperties.Name="바코드 상품 담기"
@@ -64,7 +79,7 @@
     <Grid Grid.Row="2" Margin="20" ColumnDefinitions="3*,2*" ColumnSpacing="16">
       <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="20">
         <Grid RowDefinitions="Auto,Auto,*,Auto">
-          <Grid ColumnDefinitions="*,Auto">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
             <StackPanel Orientation="Horizontal" Spacing="12">
               <TextBlock Text="장바구니" FontSize="24" FontWeight="Bold" />
               <TextBlock x:Name="TotalItemCountText"
@@ -74,6 +89,11 @@
                          Text="0개" />
             </StackPanel>
             <Button Grid.Column="1"
+                    x:Name="UndoCartButton"
+                    AutomationProperties.Name="장바구니 되돌리기"
+                    Content="되돌리기"
+                    Click="OnUndoCartClick" />
+            <Button Grid.Column="2"
                     x:Name="ClearCartButton"
                     AutomationProperties.Name="장바구니 비우기"
                     Classes="danger"

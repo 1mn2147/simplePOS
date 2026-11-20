@@ -17,6 +17,34 @@ public sealed class SalesWorkflowTests : IDisposable
         Guid.NewGuid().ToString("N"));
 
     [AvaloniaFact]
+    public async Task ScannerWithTabTerminatorAddsProductFromButtonFocus()
+    {
+        var repository = new ExcelPosRepository(await CreateDatabaseAsync());
+        var product = new Product { Name = "보리차", Barcode = "00042", Price = 1200 };
+        await repository.SaveProductAsync(product);
+        var settings = new AppSettings { ScannerTerminatorKey = "Tab" };
+        var sounds = 0;
+        var window = new SalesWindow(repository, settings, _ => Task.FromResult<IPosRepository>(repository),
+            () => sounds++, new BackupService());
+        window.Show();
+        try
+        {
+            await WaitForAsync(() => window.FindControl<TextBlock>("DatabaseStatusText")!.Text!.Contains("판매 준비"));
+            Dispatcher.UIThread.RunJobs();
+            var button = window.FindControl<Button>("SettingsButton")!;
+            button.Focus();
+            button.RaiseEvent(new TextInputEventArgs { RoutedEvent = InputElement.TextInputEvent, Text = product.Barcode });
+            button.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Tab });
+            await WaitForAsync(() => sounds == 1);
+            Assert.Equal("1개", window.FindControl<TextBlock>("TotalItemCountText")!.Text);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task BarcodeEnterAndConfirmedSalePersistStockAndHistory()
     {
         var databasePath = await CreateDatabaseAsync();
@@ -109,12 +137,12 @@ public sealed class SalesWorkflowTests : IDisposable
         try
         {
             RaiseScan(window, product.Barcode);
-            await repository.FirstLookupStarted.Task;
+            await repository.FirstLookupStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
             RaiseScan(window, product.Barcode);
             Assert.False(window.FindControl<Button>("CompleteSaleButton")!.IsEnabled);
 
             repository.AllowFirstLookup.TrySetResult();
-            await repository.SecondLookupStarted.Task;
+            await repository.SecondLookupStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
             await WaitForAsync(() => window.FindControl<TextBlock>("TotalItemCountText")!.Text == "1개");
             Assert.False(window.FindControl<Button>("CompleteSaleButton")!.IsEnabled);
 

@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Pos.Desktop.Tests" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.23" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.23" />
     <ProjectReference Include="../Pos.Infrastructure/Pos.Infrastructure.csproj" />

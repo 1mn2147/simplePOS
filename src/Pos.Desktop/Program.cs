@@ -3,8 +3,10 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
+using Avalonia.Threading;
 using Pos.App.Services;
 using Pos.Core;
+using Pos.Desktop.Services;
 using Pos.Infrastructure;
 
 namespace Pos.Desktop;
@@ -23,22 +25,19 @@ internal static class Program
         try
         {
             var paths = new AppPaths();
-            var settings = new JsonSettingsService().LoadAsync(paths.SettingsPath).GetAwaiter().GetResult();
-            var selectedPath = args.FirstOrDefault() ?? settings.DatabasePath;
-            var useDefault = string.IsNullOrWhiteSpace(selectedPath);
-            var database = new ExcelPosRepository(useDefault ? paths.DefaultDatabasePath : selectedPath!,
-                settings.OutOfStockPolicy);
-            if (!File.Exists(database.DatabasePath))
+            using var instance = OperatingSystem.IsMacOS()
+                ? new MacSingleInstanceGuard("SimplePOS", paths.RootDirectory)
+                : null;
+            if (instance is { IsPrimaryInstance: false })
             {
-                if (!useDefault)
-                {
-                    Console.Error.WriteLine($"지정한 DB를 찾을 수 없습니다: {database.DatabasePath}");
-                    return 1;
-                }
-                database.CreateAsync().GetAwaiter().GetResult();
+                Console.Error.WriteLine("SimplePOS가 이미 실행 중입니다.");
+                return 1;
             }
 
-            return AppBuilder.Configure(() => new DesktopApp(database, settings))
+            var loginEnabled = OperatingSystem.IsMacOS() &&
+                new MacLoginItemService().IsRegistered(MacLaunchCommand.ForCurrentProcess());
+            var session = DesktopSession.OpenAsync(paths, args.FirstOrDefault(), loginEnabled).GetAwaiter().GetResult();
+            return AppBuilder.Configure(() => new DesktopApp(session))
                 .UsePlatformDetect()
                 .StartWithClassicDesktopLifetime(args);
         }
@@ -50,7 +49,7 @@ internal static class Program
     }
 }
 
-internal sealed class DesktopApp(IPosRepository repository, AppSettings settings) : Application
+internal sealed class DesktopApp(DesktopSession session) : Application
 {
     public override void Initialize()
     {
@@ -62,10 +61,34 @@ internal sealed class DesktopApp(IPosRepository repository, AppSettings settings
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new SalesWindow(repository, settings.OutOfStockPolicy)
+            var backup = new BackupService();
+            var sound = OperatingSystem.IsMacOS() ? new MacScanSuccessSound() : null;
+            var scheduler = new DesktopBackupScheduler(backup, message => Dispatcher.UIThread.Post(() =>
+                (desktop.MainWindow as SalesWindow)?.SetBackupStatus(message)));
+            var window = new SalesWindow(session.Repository, session.Settings, ApplySettingsAsync,
+                () => sound?.Play(), backup)
             {
-                WindowState = settings.StartFullScreen ? WindowState.Maximized : WindowState.Normal,
+                WindowState = session.Settings.StartFullScreen ? WindowState.Maximized : WindowState.Normal,
             };
+            desktop.MainWindow = window;
+            window.Opened += (_, _) => scheduler.Update(session.Settings);
+            desktop.Exit += (_, _) =>
+            {
+                scheduler.Dispose();
+                sound?.Dispose();
+            };
+
+            async Task<IPosRepository> ApplySettingsAsync(AppSettings updated)
+            {
+                var repository = await session.ApplyAsync(updated, registered =>
+                    new MacLoginItemService().SetRegistered(registered, MacLaunchCommand.ForCurrentProcess()));
+                scheduler.Update(updated);
+                if (desktop.MainWindow is { } mainWindow)
+                {
+                    mainWindow.WindowState = updated.StartFullScreen ? WindowState.Maximized : WindowState.Normal;
+                }
+                return repository;
+            }
         }
         base.OnFrameworkInitializationCompleted();
     }

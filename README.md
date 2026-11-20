@@ -39,19 +39,19 @@ Get-FileHash .\SimplePOS-1.1.1-win-x64.exe -Algorithm SHA256
 
 개발 빌드의 게시 파일은 `artifacts/publish/win-x64/SimplePOS.exe`다. 첫 실행 시 `%LocalAppData%\SimplePOS` 아래에 설정, 기본 Excel DB, 로그를 만든다. 기존 Excel은 설정 화면의 `파일 선택`으로 지정하며, 구형 3열 파일은 원본을 유지한 채 `_pos.xlsx` 복사본으로 변환한다.
 
-### macOS 판매 화면 (개발 버전)
+### macOS 개발 버전
 
-저장소 루트에서 .NET SDK로 실행한다. 등록된 상품을 판매하려면 Windows 버전에서 만든 SimplePOS 통합 문서의 복사본 경로를 전달한다.
+저장소 루트에서 .NET SDK로 실행한다.
 
 ```sh
-dotnet run --project src/Pos.Desktop -- "/path/to/products.xlsx"
+dotnet run --project src/Pos.Desktop
 ```
 
-바코드를 입력하고 Enter를 누르거나 빠른 추가 상품을 선택한 뒤, 장바구니에서 수량과 금액을 확인하고 판매를 확정한다. 같은 파일로 다시 실행하면 변경된 재고를 읽는다. 판매 기록은 해당 파일의 `Sales`와 `SaleItems` 시트에 저장된다.
+첫 실행 시 기본 데이터 디렉터리에 빈 `data/products.xlsx`를 만든다. 판매 화면의 **상품 관리**에서 첫 상품의 이름, 가격, 바코드를 등록한다. 상품을 스캔하거나 검색 결과에서 수량을 지정해 담은 뒤 판매를 확정하면 같은 파일에 재고와 판매 이력이 저장된다. 한글과 숫자 입력 버튼은 화면 키보드를 연다.
 
-DB 인수를 생략하면 `settings.json`의 `databasePath`를 사용한다. 설정 경로도 없으면 기본 데이터 디렉터리에 빈 `data/products.xlsx`를 만든다. 개발 데이터를 분리하려면 실행 전에 `SIMPLEPOS_HOME`에 별도의 디렉터리를 지정한다. 상품 등록과 설정 화면은 후속 포팅 단계에 포함된다.
+**설정**에서 기존 SimplePOS DB를 선택하거나 구형 Excel 상품 목록을 별도 파일로 변환할 수 있다. 장바구니가 비어 있으면 다른 DB로 전환할 수 있다. 같은 화면에서 백업 위치와 주기, 수동 백업, 재고 부족 처리, 스캔 성공음, 로그인 시 자동 실행을 설정한다. 예약 백업은 앱이 실행 중일 때 진행된다.
 
-판매 화면 자동 테스트는 `dotnet test tests/Pos.Desktop.Tests -c Release`로 실행한다.
+시작할 때 특정 DB를 열려면 `dotnet run --project src/Pos.Desktop -- "/path/to/products.xlsx"`로 실행한다. 인수를 생략하면 마지막으로 설정에 저장한 DB를 연다. 개발·테스트 데이터를 분리할 때는 `SIMPLEPOS_HOME`에 별도의 디렉터리를 지정한다. macOS 화면과 서비스 테스트는 `dotnet test tests/Pos.Desktop.Tests -c Release`로 실행한다.
 
 ## 개발
 
