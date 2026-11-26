@@ -1,0 +1,156 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Pos.Desktop.SettingsWindow"
+        Title="Simple POS 설정"
+        Width="760" Height="760" MinWidth="680" MinHeight="600"
+        WindowStartupLocation="CenterOwner"
+        Background="#EFEFF4"
+        FontFamily="Apple SD Gothic Neo, Malgun Gothic, sans-serif">
+  <Window.Styles>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="White" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="20" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="MinHeight" Value="42" />
+      <Setter Property="Padding" Value="14,8" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#006DFF" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.heading">
+      <Setter Property="FontSize" Value="19" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="#6B6B6B" />
+    </Style>
+  </Window.Styles>
+
+  <Grid x:Name="SettingsContent" RowDefinitions="*,Auto">
+    <ScrollViewer Margin="20,20,20,12" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="14">
+        <TextBlock Text="설정" FontSize="28" FontWeight="Bold" />
+
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="heading" Text="상품 데이터베이스" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBox x:Name="DatabasePathInput"
+                       AutomationProperties.Name="상품 데이터베이스 경로"
+                       Watermark="SimplePOS Excel DB (.xlsx)" />
+              <Button Grid.Column="1" x:Name="SelectDatabaseButton"
+                      AutomationProperties.Name="상품 데이터베이스 선택"
+                      Content="파일 선택" Click="OnSelectDatabaseClick" />
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button x:Name="TestDatabaseButton" Content="연결 확인" Click="OnTestDatabaseClick" />
+              <Button x:Name="MigrateDatabaseButton"
+                      AutomationProperties.Name="기존 데이터베이스 복사본 변환"
+                      Content="기존 형식 복사본 변환" Click="OnMigrateDatabaseClick" />
+            </StackPanel>
+            <TextBlock x:Name="DatabaseStatusText" Classes="muted" TextWrapping="Wrap"
+                       Text="파일을 바꾸면 저장 후 연결됩니다." />
+            <Border x:Name="CartDatabaseWarning" IsVisible="False" Background="#FFFBEB" CornerRadius="6" Padding="10">
+              <TextBlock Foreground="#9A6700" TextWrapping="Wrap"
+                         Text="장바구니에 상품이 있어 데이터베이스를 바꿀 수 없습니다. 판매를 완료하거나 장바구니를 비운 뒤 다시 시도하세요." />
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="heading" Text="백업" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBox x:Name="BackupDirectoryInput"
+                       AutomationProperties.Name="백업 폴더 경로"
+                       Watermark="데이터베이스와 다른 폴더" />
+              <Button Grid.Column="1" Content="폴더 선택" Click="OnSelectBackupFolderClick" />
+            </Grid>
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+              <StackPanel Spacing="4">
+                <TextBlock Text="주기" />
+                <ComboBox x:Name="BackupIntervalInput" AutomationProperties.Name="백업 주기" SelectedIndex="0">
+                  <ComboBoxItem Content="매일" />
+                  <ComboBoxItem Content="3일마다" />
+                  <ComboBoxItem Content="7일마다" />
+                  <ComboBoxItem Content="30일마다" />
+                </ComboBox>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="4">
+                <TextBlock Text="실행 시각" />
+                <TextBox x:Name="BackupTimeInput" AutomationProperties.Name="백업 실행 시각" Watermark="03:00" />
+              </StackPanel>
+              <StackPanel Grid.Column="2" Spacing="4">
+                <TextBlock Text="보존 개수" />
+                <NumericUpDown x:Name="BackupRetentionInput" AutomationProperties.Name="백업 보존 개수"
+                               Minimum="1" Maximum="999" Increment="1" FormatString="0" />
+              </StackPanel>
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button x:Name="BackupNowButton" AutomationProperties.Name="지금 백업"
+                      Content="지금 백업" Click="OnBackupNowClick" />
+              <TextBlock x:Name="BackupStatusText" VerticalAlignment="Center" Classes="muted" Text="백업 기록 없음" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="heading" Text="판매 및 실행" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="18">
+              <StackPanel Spacing="8">
+                <TextBlock Text="품절 정책" />
+                <ComboBox x:Name="OutOfStockPolicyInput" AutomationProperties.Name="품절 정책" SelectedIndex="0">
+                  <ComboBoxItem Content="품절 시 차단" />
+                  <ComboBoxItem Content="경고 후 허용" />
+                  <ComboBoxItem Content="그냥 허용" />
+                </ComboBox>
+                <CheckBox x:Name="ScannerSoundInput" Content="스캔 성공음 사용" />
+                <TextBlock Text="스캐너 종료키" />
+                <ComboBox x:Name="ScannerTerminatorInput" AutomationProperties.Name="스캐너 종료키">
+                  <ComboBoxItem Content="Enter" />
+                  <ComboBoxItem Content="Tab" />
+                </ComboBox>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="8">
+                <TextBlock Text="앱 실행" />
+                <CheckBox x:Name="StartFullscreenInput" Content="전체 화면으로 시작" />
+                <CheckBox x:Name="RunAtLoginInput" AutomationProperties.Name="로그인 시 자동 실행"
+                          Content="macOS 로그인 시 자동 실행" />
+              </StackPanel>
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <TextBlock x:Name="SettingsStatusText" AutomationProperties.Name="설정 상태"
+                   Foreground="#B91C1C" TextWrapping="Wrap" />
+      </StackPanel>
+    </ScrollViewer>
+
+    <Border Grid.Row="1" Background="White" Padding="20,14">
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+        <Button x:Name="CancelSettingsButton" Content="취소" Click="OnCancelClick" />
+        <Button x:Name="SaveSettingsButton" Classes="primary" Content="저장 및 적용" Click="OnSaveClick" />
+      </StackPanel>
+    </Border>
+
+    <Border Grid.RowSpan="2" x:Name="DiscardChangesPanel" IsVisible="False"
+            Background="#99000000" ZIndex="20">
+      <Border Width="440" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center"
+              Background="White" CornerRadius="8">
+        <StackPanel Spacing="16">
+          <TextBlock Text="저장하지 않은 설정이 있습니다" FontSize="21" FontWeight="SemiBold" />
+          <TextBlock Classes="muted" Text="변경 내용을 버리고 설정 화면을 닫을까요?" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button x:Name="KeepEditingButton" Content="계속 편집" Click="OnKeepEditingClick" />
+            <Button x:Name="DiscardChangesButton" Content="변경 버리기" Foreground="#B91C1C" Click="OnDiscardChangesClick" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+  </Grid>
+</Window>
